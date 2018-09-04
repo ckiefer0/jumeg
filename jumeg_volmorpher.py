@@ -161,16 +161,14 @@ def auto_match_labels(fname_subj_src, label_list_subject,
 
     subj_src = mne.read_source_spaces(fname_subj_src)
     x, y, z = subj_src[0]['rr'].T
-    # hlight: subj_p contains the coordinates of the vertices
+    # subj_p contains the coordinates of the vertices
     subj_p = np.c_[x, y, z]
-    # hlight: how is subject different from subject_from?
     subject = subj_src[0]['subject_his_id']
 
     temp_src = mne.read_source_spaces(fname_temp_src)
     x1, y1, z1 = temp_src[0]['rr'].T
-    # hlight: temp_p contains the coordinates of the vertices
+    # temp_p contains the coordinates of the vertices
     temp_p = np.c_[x1, y1, z1]
-    # hlight: how is template different from subject_to?
     template = temp_src[0]['subject_his_id']
 
     print """\n#### Attempting to match %d volume source space labels from
@@ -559,13 +557,15 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
     n_iter : int (Not really needed)
         Number of iterations performed during MFT.
     normalize : bool
-        hlight: what to say here?
+        If True, normalize activity patterns label by label before and after
+        morphing.
     subjects_dir : string, or None
         Path to SUBJECTS_DIR if it is not set in the environment.
     unwanted_to_zero : bool
-        hlight: what to say here?
+        If True, set all non-Labels-of-interest in resulting stc to zero.
     label_trans_dic : dict
-        hlight: what to say here?
+        Dictionary containing transformation matrices for all labels (acquired
+        by auto_match_labels function).
     fname_save_stc : None | str
         File name for the morphed volume stc file to be saved under.
         If fname_save_stc is None, use the standard file name convention.
