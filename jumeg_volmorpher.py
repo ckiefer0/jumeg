@@ -55,19 +55,19 @@ def read_vert_labelwise(fname_src, subject, subjects_dir):
     
     Returns
     -------
-    label_list : list
-        A list containing all labels available for the subject's source space
-        with the according vertice indices
+    label_dict : dict
+        A dict containing all labels available for the subject's source space
+        and their respective vertex indices
     
     """
     fname_labels = fname_src[:-4] + '_vertno_labelwise.npy'
-    label_list = np.load(fname_labels).item()
+    label_dict = np.load(fname_labels).item()
     subj_vert_src = mne.read_source_spaces(fname_src)
-    label_list = _remove_vert_duplicates(subject, subj_vert_src, label_list,
+    label_dict = _remove_vert_duplicates(subject, subj_vert_src, label_dict,
                                          subjects_dir)
     del subj_vert_src
 
-    return label_list
+    return label_dict
 
 
 def _point_cloud_error_balltree(subj_p, temp_tree):
@@ -103,8 +103,8 @@ def _trans_from_est(params):
     return trans
 
 
-def auto_match_labels(fname_subj_src, label_list_subject,
-                      fname_temp_src, label_list_template,
+def auto_match_labels(fname_subj_src, label_dict_subject,
+                      fname_temp_src, label_dict_template,
                       subjects_dir, volume_labels, template_spacing,
                       e_func, fname_save, save_trans=False):
     """
@@ -114,11 +114,19 @@ def auto_match_labels(fname_subj_src, label_list_subject,
     Parameters
     ----------
     fname_subj_src : string
-        Filename of the first volume source space
+        Filename of the first volume source space.
+    label_dict_subject : dict
+        Dictionary containing all labels and the numbers of the
+        vertices belonging to these labels for the subject.
     fname_temp_src : string
-        Filename of the second volume source space to match on
+        Filename of the second volume source space to match on.
+    label_dict_template : dict
+        Dictionary containing all labels and the numbers of the
+        vertices belonging to these labels for the template.
     volume_labels : list of volume Labels
         List of the volume labels of interest
+    subjects_dir : str
+        Path to the subject directory.
     template_spacing : int | float
         The grid distances of the second volume source space in mm
     e_func : string | None
@@ -175,22 +183,22 @@ def auto_match_labels(fname_subj_src, label_list_subject,
     Subject: '%s' to Template: '%s' with
     %s...""" % (len(volume_labels), subject, template, err_function)
 
-    label_list_subject = _remove_vert_duplicates(subject, subj_src, label_list_subject,
+    label_dict_subject = _remove_vert_duplicates(subject, subj_src, label_dict_subject,
                                                  subjects_dir)
 
-    label_list_template = _remove_vert_duplicates(template, temp_src, label_list_template,
+    label_dict_template = _remove_vert_duplicates(template, temp_src, label_dict_template,
                                                   subjects_dir)
 
     vert_sum = 0
     vert_sum_temp = 0
     for label_i in volume_labels:
-        vert_sum = vert_sum + label_list_subject[label_i].shape[0]
-        vert_sum_temp = vert_sum_temp + label_list_template[label_i].shape[0]
+        vert_sum = vert_sum + label_dict_subject[label_i].shape[0]
+        vert_sum_temp = vert_sum_temp + label_dict_template[label_i].shape[0]
 
         # check for overlapping labels
         for label_j in volume_labels:
             if label_i != label_j:
-                h = np.intersect1d(label_list_subject[label_i], label_list_subject[label_j])
+                h = np.intersect1d(label_dict_subject[label_i], label_dict_subject[label_j])
                 if h.shape[0] > 0:
                     raise ValueError("Label %s contains %d vertices from label %s" % (label_i,
                                                                                       h.shape[0],
@@ -214,8 +222,8 @@ def auto_match_labels(fname_subj_src, label_list_subject,
         print ''
 
         # Select coords for label and check if they exceed the label size limit
-        s_pts = subj_p[label_list_subject[label]]
-        t_pts = temp_p[label_list_template[label]]
+        s_pts = subj_p[label_dict_subject[label]]
+        t_pts = temp_p[label_dict_template[label]]
 
         if s_pts.shape[0] == 0:
             raise ValueError("The label does not contain any vertices for the subject.")
@@ -367,7 +375,7 @@ def auto_match_labels(fname_subj_src, label_list_subject,
     if save_trans:
         print '\n    Writing Transformation matrices to file..'
         fname_lw_trans = fname_save
-        mat_mak_trans_dict = {}
+        mat_mak_trans_dict = dict()
         mat_mak_trans_dict['ID'] = '%s -> %s' % (subject, template)
         mat_mak_trans_dict['Labeltransformation'] = label_trans_dic
         mat_mak_trans_dict['Transformation Error[mm]'] = label_trans_dic_err
@@ -479,7 +487,7 @@ def _transform_src_lw(vsrc_subject_from, label_list_subject_from,
         try:
             mat_mak_trans_dict_arr = np.load(fname_lw_trans)
 
-        except:
+        except IOError:
             print 'MatchMaking Transformations file NOT found:'
             print fname_lw_trans, '\n'
             print 'Please calculate the according transformation matrix dictionary'
@@ -487,7 +495,6 @@ def _transform_src_lw(vsrc_subject_from, label_list_subject_from,
 
             import sys
             sys.exit(-1)
-
 
         label_trans_ID = mat_mak_trans_dict_arr[0]['ID']
         print '    Reading MatchMaking file %s..' % label_trans_ID
@@ -524,7 +531,7 @@ def _transform_src_lw(vsrc_subject_from, label_list_subject_from,
     idx_vertices = np.concatenate(np.asarray(idx_vertices))
     print '    [done]'
 
-    return (transformed_p, idx_vertices)
+    return transformed_p, idx_vertices
 
 
 def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
@@ -596,21 +603,23 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
     # Source Spaces
     subj_vol = mne.read_source_spaces(fname_vsrc_subject_from)
     temp_vol = mne.read_source_spaces(fname_vsrc_subject_to)
-    fname_label_list_subject_from = (fname_vsrc_subject_from[:-4] +
+
+    # get dictionaries with labels and their respective vertices
+    fname_label_dict_subject_from = (fname_vsrc_subject_from[:-4] +
                                      '_vertno_labelwise.npy')
-    label_list_subject_from = np.load(fname_label_list_subject_from).item()
-    fname_label_list_subject_to = (fname_vsrc_subject_to[:-4] +
+    label_dict_subject_from = np.load(fname_label_dict_subject_from).item()
+    fname_label_dict_subject_to = (fname_vsrc_subject_to[:-4] +
                                    '_vertno_labelwise.npy')
-    label_list_subject_to = np.load(fname_label_list_subject_to).item()
+    label_dict_subject_to = np.load(fname_label_dict_subject_to).item()
 
     # Check for vertex duplicates
-    label_list_subject_from = _remove_vert_duplicates(subject_from, subj_vol,
-                                                      label_list_subject_from,
+    label_dict_subject_from = _remove_vert_duplicates(subject_from, subj_vol,
+                                                      label_dict_subject_from,
                                                       subjects_dir)
 
     # Transform the whole subject source space labelwise
     transformed_p, idx_vertices = _transform_src_lw(subj_vol,
-                                                    label_list_subject_from,
+                                                    label_dict_subject_from,
                                                     volume_labels, subject_to,
                                                     subjects_dir,
                                                     label_trans_dic)
@@ -662,7 +671,7 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
 
             temp_LOI_idx = np.array([], dtype=int)
             for p, labels in enumerate(volume_labels):
-                lab_verts_temp = label_list_subject_to[labels]
+                lab_verts_temp = label_dict_subject_to[labels]
                 for i in xrange(0, lab_verts_temp.shape[0]):
                     temp_LOI_idx = np.append(temp_LOI_idx,
                                              np.where(lab_verts_temp[i]
@@ -675,7 +684,7 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
 
             subj_LOI_idx = np.array([], dtype=int)
             for p, labels in enumerate(volume_labels):
-                lab_verts_temp = label_list_subject_from[labels]
+                lab_verts_temp = label_dict_subject_from[labels]
                 for i in xrange(0, lab_verts_temp.shape[0]):
                     subj_LOI_idx = np.append(subj_LOI_idx,
                                              np.where(lab_verts_temp[i]
@@ -694,8 +703,8 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
             print '\n#### Attempting to normalize the vol-morphed stc..'
             normalized_new_data = inter_data.copy()
             for p, labels in enumerate(volume_labels):
-                lab_verts = label_list_subject_from[labels]
-                lab_verts_temp = label_list_subject_to[labels]
+                lab_verts = label_dict_subject_from[labels]
+                lab_verts_temp = label_dict_subject_to[labels]
                 subj_vert_idx = np.array([], dtype=int)
                 for i in xrange(0, lab_verts.shape[0]):
                     subj_vert_idx = np.append(subj_vert_idx,
@@ -743,8 +752,8 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
                 if plot:
                     _volumemorphing_plot_results(stc_orig, stc_morphed,
                                                  interpolation_method,
-                                                 subj_vol, label_list_subject_from,
-                                                 temp_vol, label_list_subject_to,
+                                                 subj_vol, label_dict_subject_from,
+                                                 temp_vol, label_dict_subject_to,
                                                  volume_labels, subject_from,
                                                  subject_to, cond=cond, n_iter=n_iter,
                                                  subjects_dir=subjects_dir, save=True)
@@ -776,7 +785,6 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
 
 
 def _volumemorphing_plot_results(stc_orig, stc_morphed,
-                                 interpolation_method,
                                  volume_orig, label_list_from,
                                  volume_temp, label_list_to,
                                  volume_labels, subject, subject_to,
@@ -789,8 +797,6 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
         Volume source estimate for the original subject.
     stc_morphed : VolSourceEstimate
         Volume source estimate for the destination subject.
-    interpolation_method : str | None
-        Interpolationmethod as a string to give the plot more intel
     volume_orig : instance of SourceSpaces
         The original source space that were morphed to the current
         subject.
@@ -976,8 +982,8 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
              % (act_diff_perc, act_diff_perc_morphed_normed),
              size=12, ha="left", va="top",
              bbox=dict(boxstyle="round",
-                       ec=("grey"),
-                       fc=("white"),
+                       ec="grey",
+                       fc="white",
                        )
              )
     ax1.set_ylabel('Summed Source Amplitude')
@@ -1010,9 +1016,8 @@ def plot_vstc(vstc, vsrc, tstep, subjects_dir, time_sample=None, coords=None,
         subject.
     tstep : scalar
         Time step between successive samples in data.
-    subject : str | None
-        The subject name. While not necessary, it is safer to set the
-        subject parameter to avoid analysis errors.
+    subjects_dir : str
+        The path to the subjects directory.
     time_sample : int, float | None
         None is default for finding the time sample with the voxel with global
         maximal amplitude. If int, float the given time sample is selected and
@@ -1096,7 +1101,7 @@ def plot_vstc(vstc, vsrc, tstep, subjects_dir, time_sample=None, coords=None,
                                       cut_coords=(slice_x, slice_y, slice_z),
                                       cmap=cmap, symmetric_cbar=symmetric_cbar)
     if save:
-        if fname_save == None:
+        if fname_save is None:
             print 'please provide an filepath to save .png'
         else:
             plt.savefig(fname_save)
@@ -1140,7 +1145,8 @@ def _make_image(stc_data, vsrc, tstep, label_inds=None, dest='mri',
 
     if label_inds is not None:
         inuse_replace = np.zeros(vsrc[0]['inuse'].shape, dtype=int)
-        for i, idx in enumerate(label_inds): inuse_replace[idx] = 1
+        for i, idx in enumerate(label_inds):
+            inuse_replace[idx] = 1
         mask3d = inuse_replace.reshape(shape3d).astype(np.bool)
     else:
         mask3d = vsrc[0]['inuse'].reshape(shape3d).astype(np.bool)
@@ -1222,7 +1228,7 @@ def plot_VSTCPT(vstc, vsrc, tstep, subjects_dir, time_sample=None, coords=None,
     else:
         print '    Using Cluster No.', time_sample
         t = time_sample
-    if title == None:
+    if title is None:
         title = 'Cluster No. %i' % t
         if t == 0:
             title = 'All Cluster'  # |sig.%i'%vstc.times.shape[0]-1
@@ -1249,7 +1255,7 @@ def plot_VSTCPT(vstc, vsrc, tstep, subjects_dir, time_sample=None, coords=None,
                                          cut_coords=None,
                                          cmap='black_red')
     if save:
-        if fname_save == None:
+        if fname_save is None:
             print 'please provide an filepath to save .png'
         else:
             plt.savefig(fname_save)
@@ -1298,25 +1304,35 @@ def make_indiv_spacing(subject, ave_subject, standard_spacing, subjects_dir):
     prop = (diff / diff_temp).mean()
     indiv_spacing = (prop * standard_spacing)
     print "    '%s' individual-spacing to '%s'[%.2f] is: %.4fmm" % (
-    subject, ave_subject, standard_spacing, indiv_spacing)
+        subject, ave_subject, standard_spacing, indiv_spacing)
 
     return indiv_spacing
 
 
-def _remove_vert_duplicates(subject, subj_src, label_list_subject,
+def _remove_vert_duplicates(subject, subj_src, label_dict_subject,
                             subjects_dir):
-    """ Removes all vertice duplicates from the vertice label list.
-        (Those appear because of an unsuitable process of creating labelwise
-        volume source spaces in mne-python)
+    """
+    Removes all vertex duplicates from the vertex label list.
+    (Those appear because of an unsuitable process of creating labelwise
+    volume source spaces in mne-python)
     
-    Parameters
-    ----------
-    stc_data : Data of VolSourceEstimate
-        The source estimate data
+    Parameters:
+    -----------
+    subject : str
+        Subject ID.
+    subj_src : mne.SourceSpaces
+        Volume source space for the subject brain.
+    label_dict_subject : dict
+        Dictionary with the labels and their respective vertices
+        for the subject.
+    subjects_dir : str
+        Path to the subjects directory.
 
-    Returns
-    -------
-    
+    Returns:
+    --------
+    label_dict_subject : dict
+        Dictionary with the labels and their respective vertices
+        for the subject where duplicate vertices have been removed.
     """
     fname_s_aseg = subjects_dir + subject + '/mri/aseg.mgz'
     mgz = nib.load(fname_s_aseg)
@@ -1335,7 +1351,7 @@ def _remove_vert_duplicates(subject, subj_src, label_list_subject,
     del_count = 0
     for p, label in enumerate(all_volume_labels):
         loadingBar(p, len(all_volume_labels), task_part=None)
-        lab_arr = label_list_subject[label]
+        lab_arr = label_dict_subject[label]
         lab_id = _get_lut_id(lut, label, True)[0]
         del_ver_idx_list = []
         for arr_id, i in enumerate(lab_arr, 0):
@@ -1348,10 +1364,10 @@ def _remove_vert_duplicates(subject, subj_src, label_list_subject,
                 del_ver_idx_list.append(arr_id)
                 del_count += 1
         del_ver_idx = np.asarray(del_ver_idx_list)
-        label_list_subject[label] = np.delete(label_list_subject[label], del_ver_idx)
+        label_dict_subject[label] = np.delete(label_dict_subject[label], del_ver_idx)
     print '    Deleted', del_count, 'vertice duplicates.\n'
 
-    return label_list_subject
+    return label_dict_subject
 
 
 # %% ===========================================================================
@@ -1398,7 +1414,7 @@ def sum_up_vol_cluster(clu, p_thresh=0.05, tstep=1e-3, tmin=0,
         data_summary = np.zeros((n_vertices, len(good_cluster_inds) + 1))
         print 'Data_summary is in shape of:', data_summary.shape
         for ii, cluster_ind in enumerate(good_cluster_inds):
-            loadingBar(ii + 1, len(good_cluster_inds), task_part='Cluster Idx %i' % (cluster_ind))
+            loadingBar(ii + 1, len(good_cluster_inds), task_part='Cluster Idx %i' % cluster_ind)
             data.fill(0)
             v_inds = clusters[cluster_ind][1]
             t_inds = clusters[cluster_ind][0]
@@ -1443,12 +1459,12 @@ def plot_T_obs(T_obs, threshold, tail, save, fname_save):
         plt.plot([threshold, threshold], (0, y[bincenters >= 0.].max()), color='#CD7600',
                  linestyle=':', linewidth=2)
 
-    legend = """T-Statistics:
-      Mean:  %.2f
-      Minimum:  %.2f
-      Maximum:  %.2f
-      Threshold:  %.2f  
-      """ % (T_mean, T_min, T_max, threshold)
+    legend = ('T-Statistics:\n'
+              '      Mean:  %.2f\n'
+              '      Minimum:  %.2f\n'
+              '      Maximum:  %.2f\n'
+              '      Threshold:  %.2f  \n'
+              '      ') % (T_mean, T_min, T_max, threshold)
     plt.ylim(None, y[bincenters >= 0.].max() * 1.1)
     plt.xlabel('T-scores', fontsize=12)
     plt.ylabel('T-values count', fontsize=12)
