@@ -217,7 +217,6 @@ def auto_match_labels(fname_subj_src, label_list_subject,
         s_pts = subj_p[label_list_subject[label]]
         t_pts = temp_p[label_list_template[label]]
 
-        # hlight: what's the significance of s_pts having less than 6 elements?
         if s_pts.shape[0] == 0:
             raise ValueError("The label does not contain any vertices for the subject.")
 
@@ -275,6 +274,7 @@ def auto_match_labels(fname_subj_src, label_list_subject,
             # Perform the transformation of the initial transformation matrix
             init_trans = np.zeros([4, 4])
             # hlight: what happens if the label is neither left nor right? -> init_trans is filled with zeros
+            # hlight: follow up why L and R is basically the same
             if label[0] == 'L':
                 init_trans[:3, :3] = rotation3d(0., 0., 0.) * [x_scale, y_scale, z_scale]
             elif label[0] == 'R':
@@ -408,7 +408,6 @@ def find_min(template_spacing, e_func, errfunc, temp_tree, t_pts, s_pts, init_tr
         rx, ry, rz = 0, 0, 0
         x0 = (tx, ty, tz, rx, ry, rz)
 
-        # hlight: possible to take this outside of find_min?
         def error(x):
             tx, ty, tz, rx, ry, rz = x
             trans0 = np.zeros([4, 4])
@@ -510,9 +509,8 @@ def _transform_src_lw(vsrc_subject_from, label_list_subject_from,
     transformed_p = np.array([[0, 0, 0]])
     vert_sum = []
     idx_vertices = []
-    # TODO: p stands for points?
-    for p, label in enumerate(volume_labels):
-        loadingBar(p, len(volume_labels), task_part=label)
+    for idx, label in enumerate(volume_labels):
+        loadingBar(idx, len(volume_labels), task_part=label)
         vert_sum.append(label_list[label].shape[0])
         idx_vertices.append(label_list[label])
         trans_p = subj_p[label_list[label]]
@@ -686,8 +684,8 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
                                              )
             d2 = np.zeros(stc_orig.data.shape)
             d2[subj_LOI_idx, :] = stc_orig.data[subj_LOI_idx, :]
-            # TODO: why is in stc_orig.data.flags WRITEABLE=False ?? causes crash
             if not stc_orig.data.flags["WRITEABLE"]:
+                # stc_orig.data.flags WRITEABLE=False causes crash -> set to True
                 stc_orig.data.setflags(write=1)
 
             stc_orig.data[:, :] = d2[:, :]
