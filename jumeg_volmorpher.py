@@ -17,7 +17,8 @@ import nibabel as nib
 from scipy import linalg
 from scipy.spatial.distance import cdist
 import time
-import os.path
+import os
+import os.path as op
 from scipy.interpolate import griddata
 from mne.source_estimate import _write_stc
 from nilearn import plotting
@@ -754,8 +755,7 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
                                                  interpolation_method,
                                                  subj_vol, label_dict_subject_from,
                                                  temp_vol, label_dict_subject_to,
-                                                 volume_labels, subject_from,
-                                                 subject_to, cond=cond, n_iter=n_iter,
+                                                 volume_labels, cond=cond, n_iter=n_iter,
                                                  subjects_dir=subjects_dir, save=True)
             else:
                 _write_stc(fname_stc_orig_morphed, tmin=tmin, tstep=tstep,
@@ -766,9 +766,8 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
                     _volumemorphing_plot_results(stc_orig, stc_morphed,
                                                  interpolation_method,
                                                  subj_vol, temp_vol,
-                                                 volume_labels,
-                                                 subject_from, subject_to,
-                                                 cond=cond, n_iter=n_iter,
+                                                 volume_labels, cond=cond,
+                                                 n_iter=n_iter,
                                                  subjects_dir=subjects_dir,
                                                  save=True)
         print '[done]'
@@ -787,8 +786,8 @@ def volume_morph_stc(fname_stc_orig, subject_from, fname_vsrc_subject_from,
 def _volumemorphing_plot_results(stc_orig, stc_morphed,
                                  volume_orig, label_list_from,
                                  volume_temp, label_list_to,
-                                 volume_labels, subject, subject_to,
-                                 cond, n_iter, subjects_dir, save=False):
+                                 volume_labels, cond, n_iter,
+                                 subjects_dir, save=False):
     """Gathering information and plot before and after morphing results.
     
     Parameters
@@ -801,19 +800,15 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
         The original source space that were morphed to the current
         subject.
     label_list_from : list
-        Equivalent label vertice list to the original source space
+        Equivalent label vertex list to the original source space
     volume_temp : instance of SourceSpaces
         The template source space that is  morphed on.
     label_list_to : list
-        Equivalent label vertice list to the template source space
+        Equivalent label vertex list to the template source space
     volume_labels : list of volume Labels
         List of the volume labels of interest
-    subject : string
-        Name of the subject from which to morph as named in the SUBJECTS_DIR
-    subject_to : string
-        Name of the subject on which to morph as named in the SUBJECTS_DIR
     cond : str | None
-        Evoked contition as a string to give the plot more intel
+        Evoked condition as a string to give the plot more intel
     n_iter : int
         Number of iterations performed during MFT.
     subjects_dir : string, or None
@@ -821,15 +816,11 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
 
     Returns
     -------
-    if save=True : None
+    if save == True : None
         Automatically creates matplotlib.figure and writes it to disk.
-    if save=Fales : returns matplotlib.figure
+    if save == False : returns matplotlib.figure
     
     """
-    if subject_to is None:
-        subject_to = ''
-    else:
-        subject_to = subject_to
     if cond is None:
         cond = ''
     else:
@@ -852,12 +843,12 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
                                        temp_spacing, subjects_dir)
 
     print '\n#### Attempting to save the volume morphing results ..'
-    directory = subjects_dir + '%s/plots/VolumeMorphing/' % (subject)
-    if not os.path.exists(directory):
+    directory = subjects_dir + '%s/plots/VolumeMorphing/' % subject_from
+    if not op.exists(directory):
         os.makedirs(directory)
 
-        # Create new figure and two subplots, sharing both axes
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharey=True, sharex=True,
+    # Create new figure and two subplots, sharing both axes
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True,
                                    num=999, figsize=(16, 9))
     fig.text(0.985, 0.75, 'Amplitude [T]', color='white', size='large',
              horizontalalignment='right', verticalalignment='center',
@@ -874,17 +865,15 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
                         left=0.0, right=0.97)
     t = int(np.where(np.sum(stc_orig.data, axis=0)
                      == np.max(np.sum(stc_orig.data, axis=0)))[0])
+
     plot_vstc(vstc=stc_orig, vsrc=volume_orig, tstep=stc_orig.tstep,
-              subjects_dir=subjects_dir,
-              time_sample=t, coords=None,
-              figure=999, axes=ax1,
-              save=False)
+              subjects_dir=subjects_dir, time_sample=t, coords=None,
+              figure=999, axes=ax1, save=False)
 
     plot_vstc(vstc=stc_morphed, vsrc=volume_temp, tstep=stc_orig.tstep,
-              subjects_dir=subjects_dir,
-              time_sample=t, coords=None,
-              figure=999, axes=ax2,
-              save=False)
+              subjects_dir=subjects_dir, time_sample=t, coords=None,
+              figure=999, axes=ax2, save=False)
+
     if save:
         fname_save_fig = (directory +
                           '/%s_%s_vol-%.2f_%s_%s_volmorphing-result.png'
@@ -952,7 +941,7 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
                  % (subject_to, temp_spacing, cond, n_iter),
                  fontsize=16)
     if save:
-        fname_save_fig = os.path.join(directory, '%s_%s_vol-%.2f_%s_iter-%d_labelwise-stc.png')
+        fname_save_fig = op.join(directory, '%s_%s_vol-%.2f_%s_iter-%d_labelwise-stc.png')
         fname_save_fig = fname_save_fig % (subject_from, subject_to, indiv_spacing, cond, n_iter)
         plt.savefig(fname_save_fig, facecolor=fig.get_facecolor(),
                     format='png', edgecolor='none')
@@ -991,7 +980,7 @@ def _volumemorphing_plot_results(stc_orig, stc_morphed,
     ax1.get_xaxis().grid(True)
     plt.tight_layout()
     if save:
-        fname_save_fig = os.path.join(directory, '%s_%s_vol-%.2f_%s_iter-%d_stc.png')
+        fname_save_fig = op.join(directory, '%s_%s_vol-%.2f_%s_iter-%d_stc.png')
         fname_save_fig = fname_save_fig % (subject_from, subject_to, indiv_spacing, cond, n_iter)
         plt.savefig(fname_save_fig, facecolor=fig.get_facecolor(),
                     format='png', edgecolor='none')
@@ -1087,7 +1076,7 @@ def plot_vstc(vstc, vsrc, tstep, subjects_dir, time_sample=None, coords=None,
     slice_z = int(cut_coords[2])
     print ('    Coords [mri-space]:'
            + 'X: ', slice_x, 'Y: ', slice_y, 'Z: ', slice_z)
-    temp_t1_fname = os.path.join(subjects_dir, subject, 'mri', 'T1.mgz')
+    temp_t1_fname = op.join(subjects_dir, subject, 'mri', 'T1.mgz')
 
     if threshold == 'min':
         threshold = vstcdata.min()
@@ -1264,20 +1253,25 @@ def plot_VSTCPT(vstc, vsrc, tstep, subjects_dir, time_sample=None, coords=None,
     return VSTCPT_plot
 
 
-def make_indiv_spacing(subject, ave_subject, standard_spacing, subjects_dir):
-    """ Identifies the suiting grid space difference of a subject's volume
-        source space to a template's volume source space, before a planned
-        morphing takes place.
+def make_indiv_spacing(subject, ave_subject, template_spacing, subjects_dir):
+    """
+    Identifies the suiting grid space difference of a subject's volume
+    source space to a template's volume source space, before a planned
+    morphing takes place.
     
-    Parameters
-    ----------
-    s_pts : String
-          Filename
-    t_pts : list of Labels
-          Filename
+    Parameters:
+    -----------
+    subject : str
+        Subject ID.
+    ave_subject : str
+        Name or ID of the template brain, e.g., fsaverage.
+    template_spacing : float
+        Grid spacing used for the template brain.
+    subjects_dir : str
+        Path to the subjects directory.
   
-    Returns
-    -------
+    Returns:
+    --------
     trans : SourceEstimate
           The generated source time courses.
     """
@@ -1302,9 +1296,9 @@ def make_indiv_spacing(subject, ave_subject, standard_spacing, subjects_dir):
     #      logger.info('    %s = %6.1f ... %6.1f mm --> Difference:  %6.1f mm'
     #                  % (c, mi, ma, md))
     prop = (diff / diff_temp).mean()
-    indiv_spacing = (prop * standard_spacing)
+    indiv_spacing = (prop * template_spacing)
     print "    '%s' individual-spacing to '%s'[%.2f] is: %.4fmm" % (
-        subject, ave_subject, standard_spacing, indiv_spacing)
+        subject, ave_subject, template_spacing, indiv_spacing)
 
     return indiv_spacing
 
@@ -1343,7 +1337,8 @@ def _remove_vert_duplicates(subject, subj_src, label_dict_subject,
     inv_vox2rastkr_trans = linalg.inv(vox2rastkr_trans)
     all_volume_labels = []
     vol_lab = mne.get_volume_labels_from_aseg(fname_s_aseg)
-    for lab in vol_lab: all_volume_labels.append(lab.encode())
+    for lab in vol_lab:
+        all_volume_labels.append(lab.encode())
     all_volume_labels.remove('Unknown')
 
     print """\n#### Attempting to check for vertice duplicates in labels due to
@@ -1439,7 +1434,7 @@ def plot_T_obs(T_obs, threshold, tail, save, fname_save):
 
     # T_obs plot code
     T_obs_flat = T_obs.flatten()
-    plt.figure('T-Statistics', figsize=((8, 8)))
+    plt.figure('T-Statistics', figsize=(8, 8))
     T_max = T_obs.max()
     T_min = T_obs.min()
     T_mean = T_obs.mean()
@@ -1451,12 +1446,12 @@ def plot_T_obs(T_obs, threshold, tail, save, fname_save):
         plt.xlim([-20, 0])
     else:
         plt.xlim([0, T_obs_flat.max() * 1.05])
-    y, binEdges = np.histogram(T_obs_flat,
-                               range=(0, T_obs_flat.max()),
-                               bins=500)
-    bincenters = 0.5 * (binEdges[1:] + binEdges[:-1])
+    y, bin_edges = np.histogram(T_obs_flat,
+                                range=(0, T_obs_flat.max()),
+                                bins=500)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
     if threshold is not None:
-        plt.plot([threshold, threshold], (0, y[bincenters >= 0.].max()), color='#CD7600',
+        plt.plot([threshold, threshold], (0, y[bin_centers >= 0.].max()), color='#CD7600',
                  linestyle=':', linewidth=2)
 
     legend = ('T-Statistics:\n'
@@ -1465,11 +1460,11 @@ def plot_T_obs(T_obs, threshold, tail, save, fname_save):
               '      Maximum:  %.2f\n'
               '      Threshold:  %.2f  \n'
               '      ') % (T_mean, T_min, T_max, threshold)
-    plt.ylim(None, y[bincenters >= 0.].max() * 1.1)
+    plt.ylim(None, y[bin_centers >= 0.].max() * 1.1)
     plt.xlabel('T-scores', fontsize=12)
     plt.ylabel('T-values count', fontsize=12)
     plt.title('T statistics distribution of t-test - %s' % str_tail, fontsize=15)
-    plt.plot(bincenters, y, label=legend, color='#00868B')
+    plt.plot(bin_centers, y, label=legend, color='#00868B')
     #    plt.xlim([])
     plt.tight_layout()
     legend = plt.legend(loc='upper right', shadow=True, fontsize='large', frameon=True)
