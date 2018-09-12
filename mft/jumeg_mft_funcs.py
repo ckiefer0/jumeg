@@ -337,13 +337,14 @@ def apply_mft(fwdname, datafile, evocondition=None, meg='mag',
         raise ValueError(">>>>> mftpar['solver'] must be either 'svd' or 'lu[decomp]'")
 
     if mftparm['prbfct'].lower() == 'gauss':
-        if not mftparm['prbcnt'].all() or not mftparm['prbhw'].all():
+        if not mftparm['prbcnt'].shape[-1] == 3 or not mftparm['prbhw'].all():
             raise ValueError(">>>>> 'prbfct'='Gauss' requires 'prbcnt' and 'prbhw' entries")
     elif mftparm['prbfct'].lower() != 'uniform' and mftparm['prbfct'].lower() != 'flat':
         raise ValueError(">>>>> unrecognized keyword for 'prbfct'")
-    if mftparm['prbcnt'] == None and mftparm['prbhw'] == None:
-        prbcnt = np.array([0.0,0.0,0.0],ndmin=2)
-        prbdhw = np.array([0.0,0.0,0.0],ndmin=2)
+
+    if mftparm['prbcnt'] is None and mftparm['prbhw'] is None:
+        prbcnt = np.array([0.0, 0.0, 0.0], ndmin=2)
+        prbdhw = np.array([0.0, 0.0, 0.0], ndmin=2)
     else:
         prbcnt = np.reshape(mftparm['prbcnt'],(len(mftparm['prbcnt'].flatten())/3,3))
         prbdhw = np.reshape(mftparm['prbhw'],(len(mftparm['prbhw'].flatten())/3,3))
@@ -512,7 +513,7 @@ def apply_mft(fwdname, datafile, evocondition=None, meg='mag',
         print "########## Calculate initial prob-dist:"
     tw0 = time.time()
     tc0 = time.clock()
-    if mftpar['prbfct'] == 'Gauss':
+    if mftpar['prbfct'].lower() == 'gauss':
         wtmp = np.zeros(n_loc/3)
         for icnt in xrange(prbcnt.shape[0]):
             testdiff = fwdmag['source_rr']-prbcnt[icnt,:]
