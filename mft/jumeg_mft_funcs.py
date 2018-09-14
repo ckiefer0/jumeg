@@ -20,6 +20,7 @@ from mne.io.constants import FIFF
 
 TINY = 1.e-38
 
+
 ########################################################################
 # Compare model values to measured values
 #  relerr = sum((m(P_kj*a_k)-meas_j)^2,j=1,n_meas)/sum(meas_j^2,j=1,n_meas)
@@ -49,15 +50,15 @@ def compare_est_exp(pmat, acoeff, mexp):
         mest[k] = np.dot(pmat[:, k], acoeff)
     sumestsq = np.dot(mest, mest)
     sumexpsq = np.dot(mexp, mexp)
-    if sumexpsq<TINY or sumestsq < TINY:
+    if sumexpsq < TINY or sumestsq < TINY:
         return (-1., -1., -1.)
     estnorm = np.sqrt(sumestsq)
     expnorm = np.sqrt(sumexpsq)
     mdiff = mest - mexp
-    rdmdiff = mest/estnorm - mexp/expnorm
+    rdmdiff = mest / estnorm - mexp / expnorm
     rdmerr = np.sqrt(np.dot(rdmdiff, rdmdiff))
     sumdiffsq = np.dot(mdiff, mdiff)
-    return (sumdiffsq/sumestsq, rdmerr, estnorm/expnorm)
+    return (sumdiffsq / sumestsq, rdmerr, estnorm / expnorm)
 
 
 ########################################################################
@@ -89,25 +90,25 @@ def calc_cdm_w_cut(cdv, cdvcut):
     or -1 in case of error
     """
     if len(cdv.shape) == 1:
-        cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
+        cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
     elif len(cdv.shape) == 2 and cdv.shape[1] == 3:
         cdvecs = cdv
     else:
         raise ValueError(">>>>> Illegal array shape in call")
-    if cdvcut<0. or cdvcut>=1.:
+    if cdvcut < 0. or cdvcut >= 1.:
         raise ValueError(">>>>> cdvcut must be in [0,1)")
 
-    cdvsq = np.sum(cdvecs**2,axis=1)
+    cdvsq = np.sum(cdvecs ** 2, axis=1)
     icdvmax = cdvsq.argmax()
     cdvmaxsq = cdvsq[icdvmax]
-    cdvlimsq = cdvcut*cdvcut*cdvmaxsq
+    cdvlimsq = cdvcut * cdvcut * cdvmaxsq
     cdvsq *= (cdvsq >= cdvlimsq)
     icdvpos = np.nonzero(cdvsq)[0]
     dsumpabs = np.sum(np.sqrt(cdvsq[icdvpos]))
-    cdvmaxvec = cdvecs[icdvmax,:]
-    sprod = np.dot(cdvecs[icdvpos,:],cdvmaxvec)
+    cdvmaxvec = cdvecs[icdvmax, :]
+    sprod = np.dot(cdvecs[icdvpos, :], cdvmaxvec)
     dsumplong = sprod[sprod > 0].sum() / np.sqrt(cdvmaxsq)
-    return (dsumplong/dsumpabs, dsumplong)
+    return (dsumplong / dsumpabs, dsumplong)
 
 
 ########################################################################
@@ -141,38 +142,38 @@ def fit_cdm_w_cut(cdv, cdvcut):
     or -1 in case of error
     """
     if len(cdv.shape) == 1:
-        cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
+        cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
     elif len(cdv.shape) == 2 and cdv.shape[1] == 3:
         cdvecs = cdv
     else:
         raise ValueError(">>>>> Illegal array shape in call")
-    if cdvcut<0. or cdvcut>=1.:
+    if cdvcut < 0. or cdvcut >= 1.:
         raise ValueError(">>>>> cdvcut must be in [0,1)")
 
     nphi = 20
     ntheta = 11
-    cdvsq = np.sum(cdvecs**2,axis=1)
+    cdvsq = np.sum(cdvecs ** 2, axis=1)
     icdvmax = cdvsq.argmax()
     cdvmaxsq = cdvsq[icdvmax]
-    cdvlimsq = cdvcut*cdvcut*cdvmaxsq
+    cdvlimsq = cdvcut * cdvcut * cdvmaxsq
     cdvsq *= (cdvsq >= cdvlimsq)
     icdvpos = np.nonzero(cdvsq)[0]
     dsumpabs = np.sum(np.sqrt(cdvsq[icdvpos]))
-    cdvmaxvec = cdvecs[icdvmax,:]
-    sprod = np.dot(cdvecs[icdvpos,:],cdvmaxvec)
+    cdvmaxvec = cdvecs[icdvmax, :]
+    sprod = np.dot(cdvecs[icdvpos, :], cdvmaxvec)
     dsumplong = sprod[sprod > 0].sum() / np.sqrt(cdvmaxsq)
 
     for iphi in xrange(nphi):
-        aphi = np.pi*float(2*iphi)/float(nphi)
+        aphi = np.pi * float(2 * iphi) / float(nphi)
         for itheta in xrange(ntheta):
-            atheta = np.pi*float(itheta)/float(ntheta)
-            cdvtstvec = [np.cos(aphi)*np.sin(atheta),np.sin(aphi)*np.sin(atheta),np.cos(atheta)]
-            sprod = np.dot(cdvecs[icdvpos,:],cdvtstvec)
+            atheta = np.pi * float(itheta) / float(ntheta)
+            cdvtstvec = [np.cos(aphi) * np.sin(atheta), np.sin(aphi) * np.sin(atheta), np.cos(atheta)]
+            sprod = np.dot(cdvecs[icdvpos, :], cdvtstvec)
             dsumplongtst = sprod[sprod > 0].sum()
             if dsumplongtst > dsumplong:
                 dsumplong = dsumplongtst
 
-    return (dsumplong/dsumpabs, dsumplong)
+    return (dsumplong / dsumpabs, dsumplong)
 
 
 ########################################################################
@@ -203,36 +204,37 @@ def scan_cdm_w_cut(cdv, cdvcut):
     or -1 in case of error
     """
     if len(cdv.shape) == 1:
-        cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
+        cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
     elif len(cdv.shape) == 2 and cdv.shape[1] == 3:
         cdvecs = cdv
     else:
         raise ValueError(">>>>> Illegal array shape in call")
-    if cdvcut<0. or cdvcut>=1.:
+    if cdvcut < 0. or cdvcut >= 1.:
         raise ValueError(">>>>> cdvcut must be in [0,1)")
 
-    cdvsq = np.sum(cdvecs**2,axis=1)
+    cdvsq = np.sum(cdvecs ** 2, axis=1)
     if cdvsq.shape[0] == 0:
         print ">>>Warning>> scan_cdm_w_cut(): cdvsq-array empty."
         return (0., 0.)
     icdvmax = cdvsq.argmax()
     cdvmaxsq = cdvsq[icdvmax]
-    cdvlimsq = cdvcut*cdvcut*cdvmaxsq
+    cdvlimsq = cdvcut * cdvcut * cdvmaxsq
     cdvsq *= (cdvsq >= cdvlimsq)
     icdvpos = np.nonzero(cdvsq)[0]
     dsumpabs = np.sum(np.sqrt(cdvsq[icdvpos]))
-    cdvmaxvec = cdvecs[icdvmax,:]
-    sprod = np.dot(cdvecs[icdvpos,:],cdvmaxvec)
+    cdvmaxvec = cdvecs[icdvmax, :]
+    sprod = np.dot(cdvecs[icdvpos, :], cdvmaxvec)
     dsumplong = sprod[sprod > 0].sum() / np.sqrt(cdvmaxsq)
 
     for ivec in icdvpos:
-        cdvtstvec = cdvecs[ivec,:]
-        sprod = np.dot(cdvecs[icdvpos,:],cdvtstvec)
+        cdvtstvec = cdvecs[ivec, :]
+        sprod = np.dot(cdvecs[icdvpos, :], cdvtstvec)
         dsumplongtst = sprod[sprod > 0].sum() / np.sqrt(cdvsq[ivec])
         if dsumplongtst > dsumplong:
             dsumplong = dsumplongtst
 
-    return (dsumplong/dsumpabs, dsumplong)
+    return (dsumplong / dsumpabs, dsumplong)
+
 
 ########################################################################
 # Calculate total current from current-density-vectors with cut
@@ -255,21 +257,21 @@ def calc_jtotal_w_cut(cdv, cdvcut):
     or -1 in case of error
     """
     if len(cdv.shape) == 1:
-        cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
+        cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
     elif len(cdv.shape) == 2 and cdv.shape[1] == 3:
         cdvecs = cdv
     else:
         raise ValueError(">>>>> Illegal array shape in call")
-    if cdvcut<0. or cdvcut>=1.:
+    if cdvcut < 0. or cdvcut >= 1.:
         raise ValueError(">>>>> cdvcut must be in [0,1)")
 
-    cdvsq = np.sum(cdvecs**2,axis=1)
+    cdvsq = np.sum(cdvecs ** 2, axis=1)
     if cdvsq.shape[0] == 0:
         print ">>>Warning>> scan_cdm_w_cut(): cdvsq-array empty."
         return (0.)
     icdvmax = cdvsq.argmax()
     cdvmaxsq = cdvsq[icdvmax]
-    cdvlimsq = cdvcut*cdvcut*cdvmaxsq
+    cdvlimsq = cdvcut * cdvcut * cdvmaxsq
     cdvsq *= (cdvsq >= cdvlimsq)
     icdvpos = np.nonzero(cdvsq)[0]
     dsumpabs = np.sum(np.sqrt(cdvsq[icdvpos]))
@@ -329,15 +331,15 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     mftparm = {}
     if mftpar:
         mftparm.update(mftpar)
-    mftparm.setdefault('iter',8)
-    mftparm.setdefault('currexp',1)
-    mftparm.setdefault('prbfct','uniform')
+    mftparm.setdefault('iter', 8)
+    mftparm.setdefault('currexp', 1)
+    mftparm.setdefault('prbfct', 'uniform')
     mftparm.setdefault('prbcnt')
     mftparm.setdefault('prbhw')
-    mftparm.setdefault('regtype','PzetaE')
-    mftparm.setdefault('zetareg',1.00)
-    mftparm.setdefault('solver','lu')
-    mftparm.setdefault('svrelcut',5.e-4)
+    mftparm.setdefault('regtype', 'PzetaE')
+    mftparm.setdefault('zetareg', 1.00)
+    mftparm.setdefault('solver', 'lu')
+    mftparm.setdefault('svrelcut', 5.e-4)
 
     if mftparm['solver'].lower() == 'svd':
         use_svd = True
@@ -350,20 +352,20 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         raise ValueError(">>>>> mftpar['solver'] must be either 'svd' or 'lu[decomp]'")
 
     if mftparm['prbfct'].lower() == 'gauss':
-        if not isinstance(mftparm['prbcnt'],np.ndarray) or mftparm['prbcnt'].shape[-1]!=3 or \
-           not isinstance(mftparm['prbhw'],np.ndarray) or mftparm['prbhw'].shape[-1]!=3 or \
-           not mftparm['prbhw'].all():
+        if not isinstance(mftparm['prbcnt'], np.ndarray) or mftparm['prbcnt'].shape[-1] != 3 or \
+                not isinstance(mftparm['prbhw'], np.ndarray) or mftparm['prbhw'].shape[-1] != 3 or \
+                not mftparm['prbhw'].all():
             raise ValueError(">>>>> 'prbfct'='Gauss' requires 'prbcnt' and 'prbhw' entries")
     elif mftparm['prbfct'].lower() != 'uniform' and \
-         mftparm['prbfct'].lower() != 'flat'    and \
-         mftparm['prbfct'].lower() != 'random':
+            mftparm['prbfct'].lower() != 'flat' and \
+            mftparm['prbfct'].lower() != 'random':
         raise ValueError(">>>>> unrecognized keyword for 'prbfct'")
     if mftparm['prbcnt'] is None and mftparm['prbhw'] is None:
-        prbcnt = np.array([0.0,0.0,0.0],ndmin=2)
-        prbdhw = np.array([0.0,0.0,0.0],ndmin=2)
+        prbcnt = np.array([0.0, 0.0, 0.0], ndmin=2)
+        prbdhw = np.array([0.0, 0.0, 0.0], ndmin=2)
     else:
-        prbcnt = np.reshape(mftparm['prbcnt'],(len(mftparm['prbcnt'].flatten())/3,3))
-        prbdhw = np.reshape(mftparm['prbhw'],(len(mftparm['prbhw'].flatten())/3,3))
+        prbcnt = np.reshape(mftparm['prbcnt'], (len(mftparm['prbcnt'].flatten()) / 3, 3))
+        prbdhw = np.reshape(mftparm['prbhw'], (len(mftparm['prbhw'].flatten()) / 3, 3))
     if prbcnt.shape != prbdhw.shape:
         raise ValueError(">>>>> mftpar['prbcnt'] and mftpar['prbhw'] must have same size")
 
@@ -379,34 +381,35 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         verbosity = 3
 
     if verbosity >= 0:
-        print "meg-channels     = ",meg
-        print "exclude-channels = ",exclude
-        print "mftpar['iter'    ] = ",mftparm['iter']
-        print "mftpar['currexp' ] = ",mftparm['currexp']
-        print "mftpar['regtype' ] = ",mftparm['regtype']
-        print "mftpar['zetareg' ] = ",mftparm['zetareg']
-        print "mftpar['solver'  ] = ",mftparm['solver']
-        print "mftpar['svrelcut'] = ",mftparm['svrelcut']
-        print "mftpar['prbfct'  ] = ",mftparm['prbfct']
-        print "mftpar['prbcnt'  ] = ",mftparm['prbcnt']
-        print "mftpar['prbhw'   ] = ",mftparm['prbhw']
+        print "meg-channels     = ", meg
+        print "exclude-channels = ", exclude
+        print "mftpar['iter'    ] = ", mftparm['iter']
+        print "mftpar['currexp' ] = ", mftparm['currexp']
+        print "mftpar['regtype' ] = ", mftparm['regtype']
+        print "mftpar['zetareg' ] = ", mftparm['zetareg']
+        print "mftpar['solver'  ] = ", mftparm['solver']
+        print "mftpar['svrelcut'] = ", mftparm['svrelcut']
+        print "mftpar['prbfct'  ] = ", mftparm['prbfct']
+        print "mftpar['prbcnt'  ] = ", mftparm['prbcnt']
+        print "mftpar['prbhw'   ] = ", mftparm['prbhw']
         if mftparm['prbcnt'] != None or mftparm['prbhw'] != None:
             for icnt in xrange(prbcnt.shape[0]):
-                print "  pos(prbcnt[%d])   = " % (icnt+1), prbcnt[icnt]
-                print "  dhw(prbdhw[%d])   = " % (icnt+1), prbdhw[icnt]
+                print "  pos(prbcnt[%d])   = " % (icnt + 1), prbcnt[icnt]
+                print "  dhw(prbdhw[%d])   = " % (icnt + 1), prbdhw[icnt]
         if calccdm:
-            print "calccdm = '%s' with rel. cut = %5.2f" % (calccdm,cdmcut)
+            print "calccdm = '%s' with rel. cut = %5.2f" % (calccdm, cdmcut)
     if calccdm and (cdmcut < 0. or cdmcut >= 1.):
         raise ValueError(">>>>> cdmcut must be in [0,1)")
 
-    if isinstance(iterlist,list) and len(iterlist)>0:
-        if max(iterlist)!=mftparm['iter']:
-            raise ValueError(">>>>> apply_mft() if an iterlist is specified, its highest entry must match mftpar['iter']")
+    if isinstance(iterlist, list) and len(iterlist) > 0:
+        if max(iterlist) != mftparm['iter']:
+            raise ValueError(
+                ">>>>> apply_mft() if an iterlist is specified, its highest entry must match mftpar['iter']")
 
-    if isinstance(fwdspec,basestring):
+    if isinstance(fwdspec, basestring):
         # Msg will be written by mne.read_forward_solution()
         fwd = mne.read_forward_solution(fwdspec, verbose=verbose)
-    elif isinstance(fwdspec,dict):
+    elif isinstance(fwdspec, dict):
         if not fwdspec.has_key('info') or not fwdspec.has_key('sol'):
             raise ValueError(">>>>> apply_mft() first argument not indicating a fwd-solution")
         fwd = fwdspec
@@ -422,10 +425,10 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     lfmag = fwdmag['sol']['data']
     del fwd
 
-    n_sens,n_loc = lfmag.shape
+    n_sens, n_loc = lfmag.shape
     n_srcspace = len([s['vertno'] for s in fwdmag['src']])
     if verbosity >= 2:
-        print "Leadfield size : n_sen x n_loc = %d x %d" % (n_sens,n_loc)
+        print "Leadfield size : n_sen x n_loc = %d x %d" % (n_sens, n_loc)
         print "Number of source spaces = %d" % n_srcspace
 
     if cdmlabels is not None:
@@ -444,7 +447,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
                                               fwdmag['source_rr'])
         offsets = [0]
         for s in fwdmag['src']:
-            offsets = np.append(offsets,[offsets[-1]+s['nuse']])
+            offsets = np.append(offsets, [offsets[-1] + s['nuse']])
         labinds = []
         ilab = 0
         for label in cdmlabels:
@@ -462,22 +465,22 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
                 if numlabvrts == 0:
                     continue
                 if not np.all(s['inuse'][labvrts]):
-                    print "isrc = %d: label='%s' (np.all(s['inuse'][labvrts])=False)" % (isrc,label.name)
+                    print "isrc = %d: label='%s' (np.all(s['inuse'][labvrts])=False)" % (isrc, label.name)
                     continue
                 #    labindx: indices of used label-vertices in this src-space + offset2'source_rr'
                 # iinlabused: indices of used label-vertices in this label
-                labindx = np.searchsorted(s['vertno'],labvrts) + offsets[isrc-1]
-                iinlabused = np.searchsorted(label.vertices,labvrts)
+                labindx = np.searchsorted(s['vertno'], labvrts) + offsets[isrc - 1]
+                iinlabused = np.searchsorted(label.vertices, labvrts)
                 if s['type'] == 'surf':
-                    if not np.allclose(mrsrcpnt[labindx,:],label.pos[iinlabused]):
+                    if not np.allclose(mrsrcpnt[labindx, :], label.pos[iinlabused]):
                         continue  # mismatch
                 else:
-                    if not np.allclose(fwdmag['source_rr'][labindx,:],label.pos[iinlabused]):
+                    if not np.allclose(fwdmag['source_rr'][labindx, :], label.pos[iinlabused]):
                         continue  # mismatch
                 if verbosity >= 1:
                     print "%3d %30s %7s: %5d verts %4d used" % \
                           (ilab, label.name, label.hemi, len(label.vertices), numlabvrts)
-                break # from src-space-loop
+                break  # from src-space-loop
 
             if len(labvrts) > 0:
                 labvrtstot += len(label.vertices)
@@ -490,15 +493,15 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
             print "--> sums: %5d verts %4d used" % (labvrtstot, labvrtsusd)
             tc1 = time.clock()
             tw1 = time.time()
-            print "prep. labels took %.3f" % (1000.*(tc1-tc0)),"ms (%.3f s walltime)" % (tw1-tw0)
+            print "prep. labels took %.3f" % (1000. * (tc1 - tc0)), "ms (%.3f s walltime)" % (tw1 - tw0)
 
-    if isinstance(dataspec,basestring):
+    if isinstance(dataspec, basestring):
         if dataspec.rfind('-ave.fif') > 0 or dataspec.rfind('-ave.fif.gz') > 0:
             if verbosity >= 0:
                 print "Reading evoked data from %s" % dataspec
             datafile = dataspec
             if evocondition is None:
-                #indatinfo = mne.io.read_info(dataspec)
+                # indatinfo = mne.io.read_info(dataspec)
                 indathndl = mne.read_evokeds(dataspec,
                                              baseline=(None, 0), verbose=verbose)
                 if len(indathndl) > 1:
@@ -507,99 +510,99 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
             else:
                 indathndl = mne.read_evokeds(dataspec, condition=evocondition,
                                              baseline=(None, 0), verbose=verbose)
-                #if len(indathndl) > 1:
+                # if len(indathndl) > 1:
                 #    raise ValueError(">>>>> need to specify a condition for this datafile. Aborting-")
             picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                            eeg=False, stim=False, exclude=exclude)
-            data = indathndl.data[picks,:]
+            data = indathndl.data[picks, :]
         elif dataspec.rfind('-raw.fif') > 0 or dataspec.rfind('-raw.fif.gz') > 0:
             if verbosity >= 0:
                 print "Reading raw data from %s" % dataspec
-            if not evocondition==None:
+            if not evocondition == None:
                 raise ValueError(">>>>> evocondition must not be specified with raw data. Aborting-")
             indathndl = mne.io.Raw(dataspec, preload=True, verbose=verbose)
             picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                            eeg=False, stim=False, exclude=exclude)
-            data = indathndl._data[picks,:]
+            data = indathndl._data[picks, :]
         elif dataspec.rfind('-epo.fif') > 0 or dataspec.rfind('-epo.fif.gz') > 0:
             if verbosity >= 0:
                 print "Reading epoched data from %s" % dataspec
-            if not evocondition==None:
+            if not evocondition == None:
                 raise ValueError(">>>>> evocondition must not be specified with epoch data. Aborting-")
             indathndl = mne.read_epochs(dataspec, preload=True, verbose=verbose)
             picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                            eeg=False, stim=False, exclude=exclude)
-            if len(indathndl._data.shape)==3 and indathndl._data.shape[0]>1:
+            if len(indathndl._data.shape) == 3 and indathndl._data.shape[0] > 1:
                 raise ValueError(">>>>> apply_mft() cannot handle more than one epoch at a time")
-            data = indathndl._data[0,picks,:]
+            data = indathndl._data[0, picks, :]
         else:
             raise ValueError(">>>>> datafile is neither 'ave' nor 'epo' nor 'raw'. Aborting-")
-    elif isinstance(dataspec,dict):
+    elif isinstance(dataspec, dict):
         print "##### Check how we got here #####"
-        if not dataspec.has_key('info'): # or not type(dataspec)==mne.evoked.Evoked:
+        if not dataspec.has_key('info'):  # or not type(dataspec)==mne.evoked.Evoked:
             raise ValueError(">>>>> apply_mft() second argument not indicating a data-handle")
         indathndl = dataspec
         if save_stc:
             raise ValueError(">>>>> saving stc to file only possible with named imput datafile. Aborting-")
-    elif type(dataspec)==mne.evoked.Evoked:
-        if isinstance(dataspec.info,dict):
-            if isinstance(evocondition,basestring) and not dataspec.comment==evocondition:
+    elif type(dataspec) == mne.evoked.Evoked:
+        if isinstance(dataspec.info, dict):
+            if isinstance(evocondition, basestring) and not dataspec.comment == evocondition:
                 raise ValueError(">>>>> apply_mft() mismatch of dataspec and specified condition")
             indathndl = dataspec
         else:
             raise ValueError(">>>>> apply_mft() second argument not indicating evoked data-handle")
         picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                        eeg=False, stim=False, exclude=exclude)
-        data = indathndl.data[picks,:]
+        data = indathndl.data[picks, :]
         if save_stc:
             raise ValueError(">>>>> saving stc to file only possible with named imput datafile. Aborting-")
-    elif type(dataspec)==mne.epochs.Epochs or type(dataspec)==mne.epochs.EpochsFIF:
-        if isinstance(dataspec.info,dict):
+    elif type(dataspec) == mne.epochs.Epochs or type(dataspec) == mne.epochs.EpochsFIF:
+        if isinstance(dataspec.info, dict):
             indathndl = dataspec
         else:
             raise ValueError(">>>>> apply_mft() second argument not indicating epochs data-handle")
         picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                        eeg=False, stim=False, exclude=exclude)
-        if len(indathndl._data.shape)==3 and indathndl._data.shape[0]>1:
+        if len(indathndl._data.shape) == 3 and indathndl._data.shape[0] > 1:
             raise ValueError(">>>>> apply_mft() cannot handle more than one epoch at a time")
-        data = indathndl._data[0,picks,:]
+        data = indathndl._data[0, picks, :]
         if save_stc:
             raise ValueError(">>>>> saving stc to file only possible with named imput datafile. Aborting-")
-        if not evocondition==None:
+        if not evocondition == None:
             raise ValueError(">>>>> evocondition must not be specified with epoch data. Aborting-")
-    elif type(dataspec)==list and type(dataspec[0])==mne.evoked.Evoked:
-        if len(dataspec)>1:
-            if isinstance(evocondition,basestring):
-                match = [dataspec[k].comment==evocondition for k in xrange(len(dataspec))]
-                if len(np.where(match)[0])==1:
+    elif type(dataspec) == list and type(dataspec[0]) == mne.evoked.Evoked:
+        if len(dataspec) > 1:
+            if isinstance(evocondition, basestring):
+                match = [dataspec[k].comment == evocondition for k in xrange(len(dataspec))]
+                if len(np.where(match)[0]) == 1:
                     indathndl = dataspec[np.where(match)[0][0]]
-                    print "> Found evoked data for condition ",indathndl.comment
+                    print "> Found evoked data for condition ", indathndl.comment
                 else:
                     raise ValueError(">>>>> apply_mft() condition not found or unique in dataspec")
             else:
                 raise ValueError(">>>>> apply_mft() cannot handle list of evokeds with length>1 wo condition")
-        elif isinstance(dataspec.info,dict):
+        elif isinstance(dataspec.info, dict):
             indathndl = dataspec[0]
         else:
             raise ValueError(">>>>> apply_mft() second argument not indicating evoked data-handle")
         picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                        eeg=False, stim=False, exclude=exclude)
-        data = indathndl.data[picks,:]
+        data = indathndl.data[picks, :]
         if save_stc:
             raise ValueError(">>>>> saving stc to file only possible with named imput datafile. Aborting-")
-    elif type(dataspec)==mne.io.fiff.raw.Raw:
+    elif type(dataspec) == mne.io.fiff.raw.Raw:
         indathndl = dataspec
         picks = mne.io.pick.pick_types(indathndl.info, meg=meg, ref_meg=False,
                                        eeg=False, stim=False, exclude=exclude)
-        data = indathndl._data[picks,:]
-        if not evocondition==None:
+        data = indathndl._data[picks, :]
+        if not evocondition == None:
             raise ValueError(">>>>> evocondition must not be specified with raw data. Aborting-")
         if save_stc:
             raise ValueError(">>>>> saving stc to file only possible with named imput datafile. Aborting-")
     else:
         raise ValueError(">>>>> apply_mft() second argument not indicating a data-handle")
     if verbosity >= 3:
-        print "data.shape = ",data.shape
+        print "data.shape = ", data.shape
     # Test if datafile and fwd-soln might be compatible:
     if n_sens != data.shape[0]:
         raise ValueError(">>>>> Mismatch in #channels for forward (%d) and data (%d) files. Aborting." %
@@ -616,49 +619,49 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
             raise ValueError(">>>>> Mismatch in channel-geometry for forward and data files. Aborting.")
 
     tptotwall = 0.
-    tptotcpu  = 0.
+    tptotcpu = 0.
     nptotcall = 0
     tltotwall = 0.
-    tltotcpu  = 0.
+    tltotcpu = 0.
     nltotcall = 0
     tpcdmwall = 0.
-    tpcdmcpu  = 0.
+    tpcdmcpu = 0.
     npcdmcall = 0
     if verbosity >= 1:
         print "########## Calculate initial prob-dist:"
     tw0 = time.time()
     tc0 = time.clock()
     if mftparm['prbfct'].lower() == 'gauss':
-        wtmp = np.zeros(n_loc/3)
+        wtmp = np.zeros(n_loc / 3)
         for icnt in xrange(prbcnt.shape[0]):
-            testdiff = fwdmag['source_rr']-prbcnt[icnt,:]
-            testdiff = testdiff/prbdhw[icnt,:]
-            testdiff = testdiff*testdiff
-            testsq = np.sum(testdiff,1)
-            wtmp  += np.exp(-testsq)
-        wdist0 = wtmp/(np.sum(wtmp)*np.sqrt(3.))
+            testdiff = fwdmag['source_rr'] - prbcnt[icnt, :]
+            testdiff = testdiff / prbdhw[icnt, :]
+            testdiff = testdiff * testdiff
+            testsq = np.sum(testdiff, 1)
+            wtmp += np.exp(-testsq)
+        wdist0 = wtmp / (np.sum(wtmp) * np.sqrt(3.))
     elif mftparm['prbfct'] == 'flat' or mftparm['prbfct'] == 'uniform':
         if verbosity >= 2:
             print "Setting initial w=const !"
-        wdist0 = np.ones(n_loc/3)/(float(n_loc)/np.sqrt(3.))
+        wdist0 = np.ones(n_loc / 3) / (float(n_loc) / np.sqrt(3.))
     elif mftparm['prbfct'] == 'random':
         if verbosity >= 2:
             print "Setting initial w=random !"
-        wdist0 = np.random.random_sample((n_loc/3,))
-        wdist0 /= (np.sum(wdist0)/np.sqrt(3.))
+        wdist0 = np.random.random_sample((n_loc / 3,))
+        wdist0 /= (np.sum(wdist0) / np.sqrt(3.))
     else:
         raise ValueError(">>>>> mftpar['prbfct'] must be 'Gauss' or 'uniform'/'flat'")
-    wdist3 = np.repeat(wdist0,3)
+    wdist3 = np.repeat(wdist0, 3)
     if verbosity >= 3:
-        wvecnorm = np.sum(np.sqrt(np.sum(np.reshape(wdist3, (wdist3.shape[0]/3,3))**2,axis=1)))
-        print "sum(||wvec(i)||) = ",wvecnorm
+        wvecnorm = np.sum(np.sqrt(np.sum(np.reshape(wdist3, (wdist3.shape[0] / 3, 3)) ** 2, axis=1)))
+        print "sum(||wvec(i)||) = ", wvecnorm
     if verbosity >= 2 and mftparm['prbfct'] == 'random':
-        wvecnorm = np.sum(np.sqrt(np.sum(np.reshape(wdist3, (wdist3.shape[0]/3,3))**2,axis=1)))
-        print "sum(||wvec(i)||) = ",wvecnorm
+        wvecnorm = np.sum(np.sqrt(np.sum(np.reshape(wdist3, (wdist3.shape[0] / 3, 3)) ** 2, axis=1)))
+        print "sum(||wvec(i)||) = ", wvecnorm
     tc1 = time.clock()
     tw1 = time.time()
     if verbosity >= 1:
-        print "calc(wdist0) took %.3f" % (1000.*(tc1-tc0)),"ms (%.3f s walltime)" % (tw1-tw0)
+        print "calc(wdist0) took %.3f" % (1000. * (tc1 - tc0)), "ms (%.3f s walltime)" % (tw1 - tw0)
 
     if verbosity >= 1:
         print "########## Calculate P-matrix, incl. weights:"
@@ -668,14 +671,14 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     # cf. https://www.johndcook.com/blog/2018/08/31/how-fast-can-you-multiply-matrices/
     #     https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm 
     #     (A of size n x m, B of size m x p  with max(n, m, p) = m
-    rtwd3 = np.repeat(np.sqrt(wdist0),3)
+    rtwd3 = np.repeat(np.sqrt(wdist0), 3)
     ibsize = 1024
-    ilastseg = n_loc - n_loc%ibsize
-    lfw = lfmag[:,ilastseg:]*rtwd3[ilastseg:]
-    pmat0 = np.einsum('ik,jk->ij',lfw,lfw)
-    for iseg in xrange(n_loc/ibsize):
-        lfw = lfmag[:,iseg*ibsize:iseg*ibsize+ibsize]*rtwd3[iseg*ibsize:iseg*ibsize+ibsize]
-        pmat0 += np.einsum('ik,jk->ij',lfw,lfw)
+    ilastseg = n_loc - n_loc % ibsize
+    lfw = lfmag[:, ilastseg:] * rtwd3[ilastseg:]
+    pmat0 = np.einsum('ik,jk->ij', lfw, lfw)
+    for iseg in xrange(n_loc / ibsize):
+        lfw = lfmag[:, iseg * ibsize:iseg * ibsize + ibsize] * rtwd3[iseg * ibsize:iseg * ibsize + ibsize]
+        pmat0 += np.einsum('ik,jk->ij', lfw, lfw)
     # lfw = lfmag*np.repeat(np.sqrt(wdist0),3)
     # pmat1 = np.einsum('ik,jk->ij',lfw,lfw)
     # print "allclose(pmat0,pmat1) = ", np.allclose(pmat0,pmat1)
@@ -683,93 +686,93 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     # # pmat0 = np.einsum('ik, k, jk -> ij', lfmag, wdist3, lfmag)
     tc1 = time.clock()
     tw1 = time.time()
-    tptotwall += (tw1-tw0)
-    tptotcpu  += (tc1-tc0)
+    tptotwall += (tw1 - tw0)
+    tptotcpu += (tc1 - tc0)
     nptotcall += 1
     if verbosity >= 1:
-        print "calc(lf*w*lf.T) took ", 1000.*(tc1-tc0), "ms (%.3f s walltime)" % (tw1-tw0)
+        print "calc(lf*w*lf.T) took ", 1000. * (tc1 - tc0), "ms (%.3f s walltime)" % (tw1 - tw0)
 
     # Normalize P:
-    pmax = np.amax([np.abs(np.amax(pmat0)),np.abs(np.amin(pmat0))])
+    pmax = np.amax([np.abs(np.amax(pmat0)), np.abs(np.amin(pmat0))])
     if verbosity >= 3:
-        print "pmax(init) = ",pmax
+        print "pmax(init) = ", pmax
     pscalefct = 1.
     while pmax > 1.0:
-       pmax      /= 2.
-       pscalefct /= 2.
+        pmax /= 2.
+        pscalefct /= 2.
     while pmax < 0.5:
-       pmax      *= 2.
-       pscalefct *= 2.
-    #print ">>>>> Keeping scale factor eq 1"
-    #pscalefct = 1.
-    pmat0 = pmat0*pscalefct
+        pmax *= 2.
+        pscalefct *= 2.
+    # print ">>>>> Keeping scale factor eq 1"
+    # pscalefct = 1.
+    pmat0 = pmat0 * pscalefct
     if verbosity >= 3:
-        print "pmax(fin.) = ",np.amax([np.abs(np.amax(pmat0)),np.abs(np.amin(pmat0))])
+        print "pmax(fin.) = ", np.amax([np.abs(np.amax(pmat0)), np.abs(np.amin(pmat0))])
 
     # Regularize P:
     if mftparm['regtype'] == 'PzetaE':
-        zetatrp = mftparm['zetareg']*np.trace(pmat0)/float(pmat0.shape[0])
+        zetatrp = mftparm['zetareg'] * np.trace(pmat0) / float(pmat0.shape[0])
         if verbosity >= 3:
             print "Use PzetaE-regularization with zeta*tr(P)/ncol(P) = %12.5e" % zetatrp
-        ptilde0 = pmat0 + zetatrp*np.identity(pmat0.shape[0])
+        ptilde0 = pmat0 + zetatrp * np.identity(pmat0.shape[0])
     elif mftparm['regtype'] == 'classic' or mftparm['regtype'] == 'PPzetaP':
-        zetatrp = mftparm['zetareg']*np.trace(pmat0)/float(pmat0.shape[0])
+        zetatrp = mftparm['zetareg'] * np.trace(pmat0) / float(pmat0.shape[0])
         if verbosity >= 3:
             print "Use PPzetaP-regularization with zeta*tr(P)/ncol(P) = %12.5e" % zetatrp
-        ptilde0 = np.dot(pmat0,pmat0) + zetatrp*pmat0
+        ptilde0 = np.dot(pmat0, pmat0) + zetatrp * pmat0
     else:
         raise ValueError(">>>>> mftpar['regtype'] must be 'PzetaE' or 'PPzetaP'/'classic''")
 
     # decompose:
     if use_lud is True:
-        LU0,P0 = scipy.linalg.lu_factor(ptilde0)
-        #rhstmp = np.zeros([LU0.shape[1]])
-        #xtmp = np.empty([LU0.shape[1]])
-        #xtmp = scipy.linalg.lu_solve((LU0,P0),rhstmp)
+        LU0, P0 = scipy.linalg.lu_factor(ptilde0)
+        # rhstmp = np.zeros([LU0.shape[1]])
+        # xtmp = np.empty([LU0.shape[1]])
+        # xtmp = scipy.linalg.lu_solve((LU0,P0),rhstmp)
         if verbosity >= 3:
             # Calculate condition number:
-            #(sign, lndetbf) = np.linalg.slogdet(ptilde0)
+            # (sign, lndetbf) = np.linalg.slogdet(ptilde0)
             lndettr = np.sum(np.log(np.abs(np.diag(LU0))))
-            #print "lndet(ptilde0) = %8.3f =?= %8.3f = sum(log(|diag(LU0)|))" % (lndetbf,lndettr)
+            # print "lndet(ptilde0) = %8.3f =?= %8.3f = sum(log(|diag(LU0)|))" % (lndetbf,lndettr)
             # log(prod(a_i, i=1,n)) for a_i = sqrt(sum(ptilde0_ij^2, j=1,n))
-            denom = np.sum(np.log(np.sqrt(np.sum(ptilde0*ptilde0,axis=0))))
+            denom = np.sum(np.log(np.sqrt(np.sum(ptilde0 * ptilde0, axis=0))))
             lncondno = lndettr - denom
-            print "ln(condno) = %8.3f, K_H = 10^(%8.3f) = %8.3f" % (lncondno,lncondno/np.log(10.),np.exp(lncondno))
+            print "ln(condno) = %8.3f, K_H = 10^(%8.3f) = %8.3f" % (lncondno, lncondno / np.log(10.), np.exp(lncondno))
             print "(K_H < 0.01 : bad, K_H > 0.1 : good)"
 
     if use_svd is True:
-        U, s, V = np.linalg.svd(ptilde0,full_matrices=True)
+        U, s, V = np.linalg.svd(ptilde0, full_matrices=True)
         if verbosity >= 2:
-            print ">>> SV range %e ... %e" % (np.amax(s),np.amin(s))
-        dtmp = s.max()*svrelcut
-        s *= (abs(s)>=dtmp)
-        sinv = [1./s[k] if s[k]!=0. else 0. for k in  xrange(ptilde0.shape[0])]
+            print ">>> SV range %e ... %e" % (np.amax(s), np.amin(s))
+        dtmp = s.max() * svrelcut
+        s *= (abs(s) >= dtmp)
+        sinv = [1. / s[k] if s[k] != 0. else 0. for k in xrange(ptilde0.shape[0])]
         if verbosity >= 2:
             print ">>> With rel-cutoff=%e   %d out of %d SVs remain" % \
-                  (svrelcut,np.array(np.nonzero(sinv)).shape[1],len(sinv))
+                  (svrelcut, np.array(np.nonzero(sinv)).shape[1], len(sinv))
         if verbosity >= 3:
-            stat = np.allclose(ptilde0, np.dot(U,np.dot(np.diag(s),V)))
+            stat = np.allclose(ptilde0, np.dot(U, np.dot(np.diag(s), V)))
             print ">>> Testing svd-result: %s" % stat
             if not stat:
                 print "    (Maybe due to SV-cutoff?)"
             print ">>> Setting ptildeinv=(U diag(sinv) V).tr"
-        ptilde0inv = np.transpose(np.dot(U,np.dot(np.diag(sinv),V)))
+        ptilde0inv = np.transpose(np.dot(U, np.dot(np.diag(sinv), V)))
         if verbosity >= 3:
-            stat = np.allclose(np.identity(ptilde0.shape[0]),np.dot(ptilde0inv,ptilde0))
+            stat = np.allclose(np.identity(ptilde0.shape[0]), np.dot(ptilde0inv, ptilde0))
             if stat:
                 print ">>> Testing ptilde0inv-result (shld be unit-matrix): ok"
             else:
                 print ">>> Testing ptilde0inv-result (shld be unit-matrix): failed"
-                print np.transpose(np.dot(ptilde0inv,ptilde0))
+                print np.transpose(np.dot(ptilde0inv, ptilde0))
                 print ">>>"
 
     if verbosity >= 1:
         print "########## Create stc data and qual data arrays:"
-    qualdata = { 'relerr':np.zeros(data.shape[1]), 'rdmerr':np.zeros(data.shape[1]),
-                 'mag':np.zeros(data.shape[1]) }
+    qualdata = {'relerr': np.zeros(data.shape[1]), 'rdmerr': np.zeros(data.shape[1]),
+                'mag': np.zeros(data.shape[1])}
     if calccdm is not None:
         if verbosity >= 0 and \
-           n_srcspace ==1 and (calccdm == 'left' or calccdm == 'right'):
+                n_srcspace == 1 and (calccdm == 'left' or calccdm == 'right'):
             print ">>>Warning>> cdm-results may differ from what you expect."
         ids = data.shape[1]
         if calccdm == 'all':
@@ -790,26 +793,26 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         if qualdata.has_key('cdmright'):
             fwdrhinds = np.where(fwdmag['source_rr'][:, 0] > 0.)[0]
     if cdmlabels is not None and numcdmlabels > 0:
-        qualdata['cdmlabels'] = np.zeros( (numcdmlabels,data.shape[1]) )
-        qualdata['jlglabels'] = np.zeros( (numcdmlabels,data.shape[1]) )
-        qualdata['jtotlabels'] = np.zeros( (numcdmlabels,data.shape[1]) )
+        qualdata['cdmlabels'] = np.zeros((numcdmlabels, data.shape[1]))
+        qualdata['jlglabels'] = np.zeros((numcdmlabels, data.shape[1]))
+        qualdata['jtotlabels'] = np.zeros((numcdmlabels, data.shape[1]))
 
     del fwdmag
 
-    if isinstance(iterlist,list) and len(iterlist)>0:
+    if isinstance(iterlist, list) and len(iterlist) > 0:
         stcdatalist = []
         for i in xrange(len(iterlist)):
-            stcdatalist.append( np.zeros([n_loc/3,data.shape[1]]))
+            stcdatalist.append(np.zeros([n_loc / 3, data.shape[1]]))
     else:
-        stcdatalist = [ np.zeros([n_loc/3,data.shape[1]]) ]
+        stcdatalist = [np.zeros([n_loc / 3, data.shape[1]])]
 
     if verbosity >= 2:
         print "Reading %d slices of data to calc. cdv:" % data.shape[1]
-        if data.shape[1]>1000:
+        if data.shape[1] > 1000:
             print " "
     for islice in xrange(data.shape[1]):
-        wdist  = np.copy(wdist0)
-        wdist3 = np.repeat(wdist,3)
+        wdist = np.copy(wdist0)
+        wdist3 = np.repeat(wdist, 3)
         pmat = np.copy(pmat0)
         ptilde = np.copy(ptilde0)
         if use_svd is True:
@@ -818,100 +821,100 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
             LU = np.copy(LU0)
             P = np.copy(P0)
 
-        slice = pscalefct*data[:,islice]
+        slice = pscalefct * data[:, islice]
         if mftparm['regtype'] == 'PzetaE':
             mtilde = np.copy(slice)
         else:
-            mtilde = np.dot(pmat,slice)
+            mtilde = np.dot(pmat, slice)
 
         acoeff = np.empty([ptilde.shape[0]])
         if use_svd is True:
             for irow in xrange(ptilde.shape[0]):
-                acoeff[irow] = np.dot(ptildeinv[irow,:],mtilde)
+                acoeff[irow] = np.dot(ptildeinv[irow, :], mtilde)
         if use_lud is True:
-            acoeff = scipy.linalg.lu_solve((LU,P),mtilde)
+            acoeff = scipy.linalg.lu_solve((LU, P), mtilde)
 
         cdv = np.zeros(n_loc)
-        cdvnorms = np.zeros(n_loc/3)
+        cdvnorms = np.zeros(n_loc / 3)
         for krow in xrange(lfmag.shape[0]):
-            lfwtmp = lfmag[krow,:]*wdist3
-            cdv += acoeff[krow]*lfwtmp
-        if isinstance(iterlist,list) and len(iterlist)>0 and 0 in iterlist:
+            lfwtmp = lfmag[krow, :] * wdist3
+            cdv += acoeff[krow] * lfwtmp
+        if isinstance(iterlist, list) and len(iterlist) > 0 and 0 in iterlist:
             iil = iterlist.index(0)
-            cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
-            cdvnorms = np.sqrt(np.sum(cdvecs**2,axis=1))
-            for iloc in xrange(n_loc/3):
-                stcdatalist[iil][iloc,islice] = cdvnorms[iloc]
+            cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
+            cdvnorms = np.sqrt(np.sum(cdvecs ** 2, axis=1))
+            for iloc in xrange(n_loc / 3):
+                stcdatalist[iil][iloc, islice] = cdvnorms[iloc]
 
         tlw0 = time.time()
         tlc0 = time.clock()
         for mftiter in xrange(mftparm['iter']):
             # MFT iteration loop:
 
-            cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
-            cdvnorms = np.sqrt(np.sum(cdvecs**2,axis=1))
-        
-            wdist = np.power(cdvnorms,mftparm['currexp'])*wdist0
+            cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
+            cdvnorms = np.sqrt(np.sum(cdvecs ** 2, axis=1))
+
+            wdist = np.power(cdvnorms, mftparm['currexp']) * wdist0
             wdistsum = np.sum(wdist)
-            wdist = wdist/wdistsum
-            wdist3 = np.repeat(wdist,3)
+            wdist = wdist / wdistsum
+            wdist3 = np.repeat(wdist, 3)
 
             # Calculate new P-matrix, incl. weights:
             tw0 = time.time()
             tc0 = time.clock()
-            rtwd3 = np.repeat(np.sqrt(pscalefct*wdist),3)
-            ilastseg = n_loc - n_loc%ibsize
-            lfw = lfmag[:,ilastseg:]*rtwd3[ilastseg:]
-            pmat = np.einsum('ik,jk->ij',lfw,lfw)
-            for iseg in xrange(n_loc/ibsize):
-                lfw = lfmag[:,iseg*ibsize:iseg*ibsize+ibsize]*rtwd3[iseg*ibsize:iseg*ibsize+ibsize]
-                pmat += np.einsum('ik,jk->ij',lfw,lfw)
+            rtwd3 = np.repeat(np.sqrt(pscalefct * wdist), 3)
+            ilastseg = n_loc - n_loc % ibsize
+            lfw = lfmag[:, ilastseg:] * rtwd3[ilastseg:]
+            pmat = np.einsum('ik,jk->ij', lfw, lfw)
+            for iseg in xrange(n_loc / ibsize):
+                lfw = lfmag[:, iseg * ibsize:iseg * ibsize + ibsize] * rtwd3[iseg * ibsize:iseg * ibsize + ibsize]
+                pmat += np.einsum('ik,jk->ij', lfw, lfw)
             # lfw = lfmag*np.repeat(np.sqrt(pscalefct*wdist),3)
             # pmat = np.einsum('ik,jk->ij',lfw,lfw)
 
             tc1 = time.clock()
             tw1 = time.time()
-            tptotwall += (tw1-tw0)
-            tptotcpu  += (tc1-tc0)
+            tptotwall += (tw1 - tw0)
+            tptotcpu += (tc1 - tc0)
             nptotcall += 1
 
             # Regularize P:
             if mftparm['regtype'] == 'PzetaE':
-                ptilde = pmat + zetatrp*np.identity(pmat.shape[0])
+                ptilde = pmat + zetatrp * np.identity(pmat.shape[0])
             else:
-                ptilde = np.dot(pmat,pmat) + zetatrp*pmat
+                ptilde = np.dot(pmat, pmat) + zetatrp * pmat
 
             # decompose:
             if use_svd is True:
-                U, s, V = np.linalg.svd(ptilde,full_matrices=True)
-                dtmp = s.max()*svrelcut
-                s *= (abs(s)>=dtmp)
-                sinv = [1./s[k] if s[k]!=0. else 0. for k in  xrange(ptilde.shape[0])]
-                ptildeinv = np.transpose(np.dot(U,np.dot(np.diag(sinv),V)))
+                U, s, V = np.linalg.svd(ptilde, full_matrices=True)
+                dtmp = s.max() * svrelcut
+                s *= (abs(s) >= dtmp)
+                sinv = [1. / s[k] if s[k] != 0. else 0. for k in xrange(ptilde.shape[0])]
+                ptildeinv = np.transpose(np.dot(U, np.dot(np.diag(sinv), V)))
                 for irow in xrange(ptilde.shape[0]):
-                    acoeff[irow] = np.dot(ptildeinv[irow,:],mtilde)
+                    acoeff[irow] = np.dot(ptildeinv[irow, :], mtilde)
             if use_lud is True:
-                LU,P = scipy.linalg.lu_factor(ptilde)
-                acoeff = scipy.linalg.lu_solve((LU,P),mtilde)
+                LU, P = scipy.linalg.lu_factor(ptilde)
+                acoeff = scipy.linalg.lu_solve((LU, P), mtilde)
 
-            cdv = np.einsum('ji,i,j->i',lfmag,wdist3,acoeff)
+            cdv = np.einsum('ji,i,j->i', lfmag, wdist3, acoeff)
 
-            if isinstance(iterlist,list) and len(iterlist)>0 and mftiter+1 in iterlist:
-                iil = iterlist.index(mftiter+1)
-                cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
-                cdvnorms = np.sqrt(np.sum(cdvecs**2,axis=1))
-                for iloc in xrange(n_loc/3):
-                    stcdatalist[iil][iloc,islice] = cdvnorms[iloc]
+            if isinstance(iterlist, list) and len(iterlist) > 0 and mftiter + 1 in iterlist:
+                iil = iterlist.index(mftiter + 1)
+                cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
+                cdvnorms = np.sqrt(np.sum(cdvecs ** 2, axis=1))
+                for iloc in xrange(n_loc / 3):
+                    stcdatalist[iil][iloc, islice] = cdvnorms[iloc]
 
         tc1 = time.clock()
         tw1 = time.time()
-        tltotwall += (tw1-tlw0)
-        tltotcpu  += (tc1-tlc0)
+        tltotwall += (tw1 - tlw0)
+        tltotcpu += (tc1 - tlc0)
         nltotcall += 1
-        cdvecs = np.reshape(cdv, (cdv.shape[0]/3,3))
-        cdvnorms = np.sqrt(np.sum(cdvecs**2,axis=1))
-        #(relerr,rdmerr,mag) = compare_est_exp(ptilde,acoeff,mtilde)
-        (relerr,rdmerr,mag) = compare_est_exp(pmat,acoeff,slice)
+        cdvecs = np.reshape(cdv, (cdv.shape[0] / 3, 3))
+        cdvnorms = np.sqrt(np.sum(cdvecs ** 2, axis=1))
+        # (relerr,rdmerr,mag) = compare_est_exp(ptilde,acoeff,mtilde)
+        (relerr, rdmerr, mag) = compare_est_exp(pmat, acoeff, slice)
         qualdata['relerr'][islice] = relerr
         qualdata['rdmerr'][islice] = rdmerr
         qualdata['mag'][islice] = mag
@@ -919,29 +922,29 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         tc0 = time.clock()
         tw0 = time.time()
         if qualdata.has_key('cdmall'):
-            (qualdata['cdmall'][islice],qualdata['jlgall'][islice]) = scan_cdm_w_cut(cdv,cdmcut)
+            (qualdata['cdmall'][islice], qualdata['jlgall'][islice]) = scan_cdm_w_cut(cdv, cdmcut)
         if qualdata.has_key('cdmleft'):
-            (qualdata['cdmleft'][islice],qualdata['jlgleft'][islice]) = \
-                                                      scan_cdm_w_cut(cdvecs[fwdlhinds,:],cdmcut)
+            (qualdata['cdmleft'][islice], qualdata['jlgleft'][islice]) = \
+                scan_cdm_w_cut(cdvecs[fwdlhinds, :], cdmcut)
         if qualdata.has_key('cdmright'):
-            (qualdata['cdmright'][islice],qualdata['jlgright'][islice]) = \
-                                                      scan_cdm_w_cut(cdvecs[fwdrhinds,:],cdmcut)
+            (qualdata['cdmright'][islice], qualdata['jlgright'][islice]) = \
+                scan_cdm_w_cut(cdvecs[fwdrhinds, :], cdmcut)
         if qualdata.has_key('cdmlabels'):
             for ilab in xrange(numcdmlabels):
-                (qualdata['cdmlabels'][ilab,islice],qualdata['jlglabels'][ilab,islice]) = \
-                               scan_cdm_w_cut(cdvecs[labinds[ilab],:],cdmcut)
-                qualdata['jtotlabels'][ilab,islice] = \
-                            calc_jtotal_w_cut(cdvecs[labinds[ilab],:],cdmcut)
+                (qualdata['cdmlabels'][ilab, islice], qualdata['jlglabels'][ilab, islice]) = \
+                    scan_cdm_w_cut(cdvecs[labinds[ilab], :], cdmcut)
+                qualdata['jtotlabels'][ilab, islice] = \
+                    calc_jtotal_w_cut(cdvecs[labinds[ilab], :], cdmcut)
         tc1 = time.clock()
         tw1 = time.time()
-        tpcdmwall += (tw1-tw0)
-        tpcdmcpu  += (tc1-tc0)
+        tpcdmwall += (tw1 - tw0)
+        tpcdmcpu += (tc1 - tc0)
         npcdmcall += 1
 
         # Write final cdv to the stcdatalist:
-        if not isinstance(iterlist,list) or len(iterlist)==0:
-            for iloc in xrange(n_loc/3):
-                stcdatalist[0][iloc,islice] = cdvnorms[iloc]
+        if not isinstance(iterlist, list) or len(iterlist) == 0:
+            for iloc in xrange(n_loc / 3):
+                stcdatalist[0][iloc, islice] = cdvnorms[iloc]
         del wdist
         del pmat
         del ptilde
@@ -950,16 +953,16 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         if use_lud is True:
             del LU
             del P
-        if verbosity >= 2 and islice>0 and islice%1000==0:
-            print "\r%6d out of %6d slices done." % (islice,data.shape[1])
-    if verbosity >= 2 and data.shape[1]>1000:
+        if verbosity >= 2 and islice > 0 and islice % 1000 == 0:
+            print "\r%6d out of %6d slices done." % (islice, data.shape[1])
+    if verbosity >= 2 and data.shape[1] > 1000:
         print "Done."
 
     # Restore access to fwdmag:
-    if isinstance(fwdspec,basestring):
+    if isinstance(fwdspec, basestring):
         # Msg will be written by mne.read_forward_solution()
         fwd = mne.read_forward_solution(fwdspec, verbose=verbose)
-    elif isinstance(fwdspec,dict):
+    elif isinstance(fwdspec, dict):
         if not fwdspec.has_key('info') or not fwdspec.has_key('sol'):
             raise ValueError(">>>>> apply_mft() first argument not indicating a fwd-solution")
         fwd = fwdspec
@@ -970,7 +973,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     del fwd
 
     vertices = [s['vertno'] for s in fwdmag['src']]
-    tstep = 1./indathndl.info['sfreq']
+    tstep = 1. / indathndl.info['sfreq']
     tmin = indathndl.times[0]
     stc_mftlist = []
     for istclist in xrange(len(stcdatalist)):
@@ -987,7 +990,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
                                             tmin=tmin, tstep=tstep, subject=subject)
         stc_mftlist.append(stc_mft)
     stcdatamft = stc_mftlist[-1].data
-    if isinstance(iterlist,list) and len(iterlist)>0:
+    if isinstance(iterlist, list) and len(iterlist) > 0:
         # Set stcdatamft to the highest iteration
         stc_mft = stc_mftlist[iterlist.index(max(iterlist))]
         stcdatamft = stc_mft.data
@@ -995,12 +998,12 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     print "##### Results:"
     for islice in xrange(data.shape[1]):
         print "slice=%4d: relerr=%9.3e rdmerr=%9.3e mag=%5.3f cdvmax=%9.2e" % \
-              (islice, qualdata['relerr'][islice], qualdata['rdmerr'][islice], qualdata['mag'][islice],\
+              (islice, qualdata['relerr'][islice], qualdata['rdmerr'][islice], qualdata['mag'][islice], \
                np.amax(stcdatamft[:, islice]))
     iil = 0
-    if isinstance(iterlist,list) and len(iterlist)>0:
+    if isinstance(iterlist, list) and len(iterlist) > 0:
         iil = iterlist.index(max(iterlist))
-    
+
     stat = np.allclose(stcdatalist[iil], stcdatamft, atol=0., rtol=1e-07)
     if stat:
         print "stcdata from mft-SR and old calc agree."
@@ -1019,17 +1022,18 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     twgbl1 = time.time()
     tcgbl1 = time.clock()
     if verbosity >= 1:
-        print "calc(lf*w*lf.T) took   total  %9.2f s CPU-time (%9.2f s walltime)" % (tptotcpu,tptotwall)
+        print "calc(lf*w*lf.T) took   total  %9.2f s CPU-time (%9.2f s walltime)" % (tptotcpu, tptotwall)
         print "calc(lf*w*lf.T) took per call %9.2fms CPU-time (%9.2fms walltime)" % \
-                               (1000.*tptotcpu/float(nptotcall),1000.*tptotwall/float(nptotcall))
-        print "scan_cdm calls  took   total  %9.2f s CPU-time (%9.2f s walltime)" % (tpcdmcpu,tpcdmwall)
+              (1000. * tptotcpu / float(nptotcall), 1000. * tptotwall / float(nptotcall))
+        print "scan_cdm calls  took   total  %9.2f s CPU-time (%9.2f s walltime)" % (tpcdmcpu, tpcdmwall)
         print "scan_cdm calls  took per call %9.2fms CPU-time (%9.2fms walltime)" % \
-                               (1000.*tpcdmcpu/float(npcdmcall),1000.*tpcdmwall/float(npcdmcall))
-        print "iteration-loops took   total  %9.2f s CPU-time (%9.2f s walltime)" % (tltotcpu,tltotwall)
+              (1000. * tpcdmcpu / float(npcdmcall), 1000. * tpcdmwall / float(npcdmcall))
+        print "iteration-loops took   total  %9.2f s CPU-time (%9.2f s walltime)" % (tltotcpu, tltotwall)
         print "iteration-loops took per call %9.2fms CPU-time (%9.2fms walltime)" % \
-                               (1000.*tltotcpu/float(nltotcall),1000.*tltotwall/float(nltotcall))
-        print "Total mft-call  took   total  %9.2f s CPU-time (%9.2f s walltime)" % ((tcgbl1-tcgbl0),(twgbl1-twgbl0))
-    if isinstance(iterlist,list) and len(iterlist)>0:
+              (1000. * tltotcpu / float(nltotcall), 1000. * tltotwall / float(nltotcall))
+        print "Total mft-call  took   total  %9.2f s CPU-time (%9.2f s walltime)" % (
+        (tcgbl1 - tcgbl0), (twgbl1 - twgbl0))
+    if isinstance(iterlist, list) and len(iterlist) > 0:
         return (fwdmag, qualdata, stc_mftlist)
     else:
         return (fwdmag, qualdata, stc_mftlist[0])
