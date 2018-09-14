@@ -358,7 +358,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
          mftparm['prbfct'].lower() != 'flat'    and \
          mftparm['prbfct'].lower() != 'random':
         raise ValueError(">>>>> unrecognized keyword for 'prbfct'")
-    if mftparm['prbcnt'] == None and mftparm['prbhw'] == None:
+    if mftparm['prbcnt'] is None and mftparm['prbhw'] is None:
         prbcnt = np.array([0.0,0.0,0.0],ndmin=2)
         prbdhw = np.array([0.0,0.0,0.0],ndmin=2)
     else:
