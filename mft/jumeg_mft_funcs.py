@@ -370,7 +370,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         raise ValueError(">>>>> mftpar['prbcnt'] and mftpar['prbhw'] must have same size")
 
     verbosity = 1
-    if verbose == False or verbose == 'CRITICAL':
+    if verbose is False or verbose == 'CRITICAL':
         verbosity = -1
     elif verbose == 'WARNING':
         verbosity = 0
@@ -615,7 +615,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
                 print ">>>>> position mismatch data-forward_soln for '%s'" % \
                       indathndl.info['chs'][isens]['ch_name']
                 mismatch = True
-        if mismatch == True:
+        if mismatch is True:
             raise ValueError(">>>>> Mismatch in channel-geometry for forward and data files. Aborting.")
 
     tptotwall = 0.
