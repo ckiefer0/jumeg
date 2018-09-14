@@ -160,11 +160,11 @@ def auto_match_labels(fname_subj_src, label_dict_subject,
     if e_func == 'balltree':
         err_function = 'BallTree Error Function'
         errfunc = _point_cloud_error_balltree
-    if e_func == 'euclidean':
+    elif e_func == 'euclidean':
         err_function = 'Euclidean Error Function'
         errfunc = _point_cloud_error
-    if e_func is None:
-        print 'No Error Function provided, using BallTree instead'
+    else:
+        print 'No or invalid error function provided, using BallTree instead'
         err_function = 'BallTree Error Function'
         errfunc = _point_cloud_error_balltree
 
@@ -1185,8 +1185,6 @@ def plot_vstc_sliced(vstc, vsrc, tstep, subjects_dir, time_sample=None, cut_coor
 
     if threshold == 'min':
         threshold = vstcdata.min()
-
-    # TODO: maybe add something like percentile of baseline for threshold?
 
     vstc_plt = plotting.plot_stat_map(index_img(img, t), temp_t1_fname,
                                       figure=figure, axes=axes,
