@@ -1453,6 +1453,10 @@ def jumeg_plot_stat_map(stat_map_img, t, bg_img=MNI152TEMPLATE, cut_coords=None,
     cbar_vmin, cbar_vmax, vmin, vmax = _get_colorbar_and_data_ranges(_safe_get_data(stat_map_img, ensure_finite=True),
                                                                      vmax, symmetric_cbar, kwargs)
 
+    # there are no negative values
+    cbar_vmin = 0.
+    vmin = 0.
+
     stat_map_img_at_time_t = index_img(stat_map_img, t)
     stat_map_img_at_time_t = check_niimg_3d(stat_map_img_at_time_t, dtype='auto')
 
