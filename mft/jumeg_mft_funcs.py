@@ -662,11 +662,11 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
             testsq = np.sum(testdiff, 1)
             wtmp += np.exp(-testsq)
         wdist0 = wtmp / (np.sum(wtmp) * np.sqrt(3.))
-    elif mftparm['prbfct'] == 'flat' or mftparm['prbfct'] == 'uniform':
+    elif mftparm['prbfct'].lower() == 'flat' or mftparm['prbfct'].lower() == 'uniform':
         if verbosity >= 2:
             print "Setting initial w=const !"
         wdist0 = np.ones(n_loc / 3) / (float(n_loc) / np.sqrt(3.))
-    elif mftparm['prbfct'] == 'random':
+    elif mftparm['prbfct'].lower() == 'random':
         if verbosity >= 2:
             print "Setting initial w=random !"
         wdist0 = np.random.random_sample((n_loc / 3,))
@@ -677,7 +677,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     if verbosity >= 3:
         wvecnorm = np.sum(np.sqrt(np.sum(np.reshape(wdist3, (wdist3.shape[0] / 3, 3)) ** 2, axis=1)))
         print "sum(||wvec(i)||) = ", wvecnorm
-    if verbosity >= 2 and mftparm['prbfct'] == 'random':
+    if verbosity >= 2 and mftparm['prbfct'].lower() == 'random':
         wvecnorm = np.sum(np.sqrt(np.sum(np.reshape(wdist3, (wdist3.shape[0] / 3, 3)) ** 2, axis=1)))
         print "sum(||wvec(i)||) = ", wvecnorm
     tc1 = time.clock()
