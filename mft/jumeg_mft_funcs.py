@@ -405,7 +405,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         print "mftpar['prbfct'  ] = ", mftparm['prbfct']
         print "mftpar['prbcnt'  ] = ", mftparm['prbcnt']
         print "mftpar['prbhw'   ] = ", mftparm['prbhw']
-        if mftparm['prbcnt'] != None or mftparm['prbhw'] != None:
+        if mftparm['prbcnt'] is not None or mftparm['prbhw'] is not None:
             for icnt in xrange(prbcnt.shape[0]):
                 print "  pos(prbcnt[%d])   = " % (icnt + 1), prbcnt[icnt]
                 print "  dhw(prbdhw[%d])   = " % (icnt + 1), prbdhw[icnt]
