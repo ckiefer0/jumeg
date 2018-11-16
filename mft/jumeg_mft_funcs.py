@@ -5,7 +5,7 @@ Jumeg MFT Functions.
 """
 
 # Author: Eberhard Eich
-# Version: 180913
+# Version: 181114
 # License: BSD (3-clause)
 
 import os
@@ -300,6 +300,9 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     meg: meg-channels to pick ['mag']
     exclude: meg-channels to exclude ['bads']
     mftpar: dictionary with parameters for MFT algorithm
+    iterlist: list | None
+              optional list of iterations, for which data are returned
+              its highest entry must match mftpar['iter']
     calccdm : str | None
               where str can be 'all', 'both', 'left', 'right'
     cdmcut : (rel.) cut to use in cdm-calculations [0.]
@@ -319,10 +322,12 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
 
     Returns
     fwdmag: forward object restricted to (selected) meg-channels
-    qualmft: dictionary with relerr,rdmerr,mag-arrays and
-             cdm-arrays (if requested)
+    qualdata: dictionary with relerr,rdmerr,mag-arrays and
+              cdm-arrays (if requested),
+              always refers to highest iteration
     stcdata: stc with ||cdv|| at fwdmag['source_rr']
              (type corresponding to forward solution)
+             list of stcs in case of iterlist!=None
     """
     twgbl0 = time.time()
     tcgbl0 = time.clock()
@@ -336,6 +341,8 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     mftparm.setdefault('prbfct', 'uniform')
     mftparm.setdefault('prbcnt')
     mftparm.setdefault('prbhw')
+    mftparm.setdefault('prbxfm')
+    mftparm.setdefault('prblog')
     mftparm.setdefault('regtype', 'PzetaE')
     mftparm.setdefault('zetareg', 1.00)
     mftparm.setdefault('solver', 'lu')
@@ -356,6 +363,12 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
                 not isinstance(mftparm['prbhw'], np.ndarray) or mftparm['prbhw'].shape[-1] != 3 or \
                 not mftparm['prbhw'].all():
             raise ValueError(">>>>> 'prbfct'='Gauss' requires 'prbcnt' and 'prbhw' entries")
+        if mftparm['prbxfm'] is None:
+            prbxfm = np.identity(4)
+        elif isinstance(mftparm['prbxfm'], np.ndarray) and mftparm['prbxfm'].shape == (4, 4):
+            prbxfm = mftparm['prbxfm']
+        else:
+            raise ValueError(">>>>> 'prbxfm' must specify a xfm (or None)")
     elif mftparm['prbfct'].lower() != 'uniform' and \
             mftparm['prbfct'].lower() != 'flat' and \
             mftparm['prbfct'].lower() != 'random':
@@ -396,6 +409,12 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
             for icnt in xrange(prbcnt.shape[0]):
                 print "  pos(prbcnt[%d])   = " % (icnt + 1), prbcnt[icnt]
                 print "  dhw(prbdhw[%d])   = " % (icnt + 1), prbdhw[icnt]
+        if mftparm['prbxfm'] is None:
+            print "mftpar['prbxfm'  ] = None"
+        else:
+            print "mftpar['prbxfm'  ] = ", mftparm['prbxfm']
+        if isinstance(mftparm['prblog'], basestring):
+            print "mftpar['prblog'  ] = ", mftparm['prblog']
         if calccdm:
             print "calccdm = '%s' with rel. cut = %5.2f" % (calccdm, cdmcut)
     if calccdm and (cdmcut < 0. or cdmcut >= 1.):
@@ -635,6 +654,9 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         wtmp = np.zeros(n_loc / 3)
         for icnt in xrange(prbcnt.shape[0]):
             testdiff = fwdmag['source_rr'] - prbcnt[icnt, :]
+            if mftparm['prbxfm'] is not None:
+                tmpvecs = mne.transforms.apply_trans(prbxfm, testdiff, move=False)
+                testdiff = tmpvecs
             testdiff = testdiff / prbdhw[icnt, :]
             testdiff = testdiff * testdiff
             testsq = np.sum(testdiff, 1)
@@ -660,6 +682,19 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         print "sum(||wvec(i)||) = ", wvecnorm
     tc1 = time.clock()
     tw1 = time.time()
+    if isinstance(mftparm['prblog'], basestring):
+        wdisttabfile = open(mftparm['prblog'], mode='w')
+        wdisttabfile.write("# Initial probabillty distribution in head-CS\n")
+        wdisttabfile.write("#\n")
+        wdisttabfile.write("# index  x/mm    y/mm    z/mm     prob\n")
+        for ipos in xrange(n_loc / 3):
+            copnt = 1000. * fwdmag['source_rr'][ipos, :]
+            wdisttabfile.write(" %5d  %7.2f %7.2f %7.2f  %12.5e\n" % \
+                               (ipos, copnt[0], copnt[1], copnt[2], wdist0[ipos]))
+        wdisttabfile.write("# sum(prob) = %6.4f\n" % np.sum(wdist0))
+        wdisttabfile.close()
+        if verbosity >= 1:
+            print "Initial prob-dist written to ", mftparm['prblog']
     if verbosity >= 1:
         print "calc(wdist0) took %.3f" % (1000. * (tc1 - tc0)), "ms (%.3f s walltime)" % (tw1 - tw0)
 
@@ -669,7 +704,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     tc0 = time.clock()
     # Split the leadfield matrix into submatrices for speed
     # cf. https://www.johndcook.com/blog/2018/08/31/how-fast-can-you-multiply-matrices/
-    #     https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm 
+    #     https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm
     #     (A of size n x m, B of size m x p  with max(n, m, p) = m
     rtwd3 = np.repeat(np.sqrt(wdist0), 3)
     ibsize = 1024
@@ -729,7 +764,7 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
         # rhstmp = np.zeros([LU0.shape[1]])
         # xtmp = np.empty([LU0.shape[1]])
         # xtmp = scipy.linalg.lu_solve((LU0,P0),rhstmp)
-        if verbosity >= 3:
+        if verbosity >= 2:
             # Calculate condition number:
             # (sign, lndetbf) = np.linalg.slogdet(ptilde0)
             lndettr = np.sum(np.log(np.abs(np.diag(LU0))))
