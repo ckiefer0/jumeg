@@ -1217,8 +1217,8 @@ def plot_vstc_sliced_old(vstc, vsrc, tstep, subjects_dir, time=None, cut_coords=
 
 
 def plot_vstc_sliced_grid(subjects_dir, vstc, vsrc, tstep, time=None, display_mode=['x'], cut_coords=6,
-                          cmap='nipy_spectral', threshold='min', grid=[4, 6], res_save=[1920, 1080],
-                          fn_image='plot.png'):
+                          cmap='nipy_spectral', threshold='min', negative_values=False, grid=[4, 6],
+                          res_save=[1920, 1080], fn_image='plot.png'):
     """
 
     Parameters:
@@ -1253,7 +1253,8 @@ def plot_vstc_sliced_grid(subjects_dir, vstc, vsrc, tstep, time=None, display_mo
 
         axes = axes.flatten()
 
-        params_plot_img_with_bg = get_params_for_grid_slice(vstc, vsrc, tstep, subjects_dir)
+        params_plot_img_with_bg = get_params_for_grid_slice(vstc, vsrc, tstep, subjects_dir,
+                                                            negative_values=negative_values)
 
         for i, (ax, z) in enumerate(zip(axes, cut_coords)):
             cut_coords_slice = [z]
@@ -1292,7 +1293,7 @@ def plot_vstc_sliced_grid(subjects_dir, vstc, vsrc, tstep, time=None, display_mo
         print "Calculation took %d minutes and %d seconds" % (minutes, seconds)
         print ""
 
-def get_params_for_grid_slice(vstc, vsrc, tstep, subjects_dir, **kwargs):
+def get_params_for_grid_slice(vstc, vsrc, tstep, subjects_dir, negative_values=False, **kwargs):
 
     img = vstc.as_volume(vsrc, dest='mri', mri_resolution=False)
     if vstc == 0:
@@ -1320,9 +1321,10 @@ def get_params_for_grid_slice(vstc, vsrc, tstep, subjects_dir, **kwargs):
     cbar_vmin, cbar_vmax, vmin, vmax = _get_colorbar_and_data_ranges(
         _safe_get_data(stat_map_img, ensure_finite=True), vmax, symmetric_cbar, kwargs)
 
-    # there are no negative values
-    cbar_vmin = 0.
-    vmin = 0.
+    if not negative_values:
+        # there are no negative values
+        cbar_vmin = 0.
+        vmin = 0.
 
     plot_img_with_bg_params = dict()
     plot_img_with_bg_params['bg_img'] = bg_img
