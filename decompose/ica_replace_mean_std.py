@@ -444,11 +444,11 @@ class ICA(ICA_ORIG):
                  verbose=None):
 
         # check if version of mne is at least 0.16.1 or newer
-        if check_version('mne', '0.16.1'):
+        if check_version('mne', '0.17.0'):
             print ""
             print ""
             print "jumeg.ica_replace_mean_std.ICA has only been tested with"
-            print "mne-python up to version 0.16.1. Your Version of mne-python"
+            print "mne-python up to version 0.17.0. Your Version of mne-python"
             print "is more recent."
             print "Please check if any arguments for initializing the ICA"
             print "object changed and implement these changes for the call"
