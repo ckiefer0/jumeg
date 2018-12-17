@@ -507,8 +507,11 @@ def suggest_bads(raw, sensitivity_steps=97, sensitivity_psd=95,
 
     #  marks are all channels of interest, including premarked bad channels
     # and zero channels (channel indices)
-    print "Suggested bads [jumps]:", afp_suspects
-    print "Suggested bads [unusual]:", psd_suspects
+
+    jumps = list(set([item for sublist in afp_suspects for item in sublist]))
+    unusual = list(set([item for sublist in psd_suspects for item in sublist]))
+    print "Suggested bads [jumps]:", jumps
+    print "Suggested bads [unusual]:", unusual
     print "Suggested bads [dead]:", zero_suspects
 
     marks = list(set(picks_autodetect) | set(picks_bad) | set(zero_suspects))
