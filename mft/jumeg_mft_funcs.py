@@ -336,6 +336,9 @@ def apply_mft(fwdspec, dataspec, evocondition=None, meg='mag',
     mftparm = {}
     if mftpar:
         mftparm.update(mftpar)
+        mftparm['prbfct'] = mftparm['prbfct'].lower()
+        mftparm['solver'] = mftparm['solver'].lower()
+
     mftparm.setdefault('iter', 8)
     mftparm.setdefault('currexp', 1)
     mftparm.setdefault('prbfct', 'uniform')
