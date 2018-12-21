@@ -540,5 +540,6 @@ def suggest_bads(raw, sensitivity_steps=97, sensitivity_psd=95,
     if show_raw:
         raw.plot(block=True)
         marked = raw.info['bads']
+        marked.sort()
 
     return marked, raw
