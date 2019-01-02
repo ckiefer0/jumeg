@@ -467,7 +467,7 @@ class ICA(ICA_ORIG):
 
     def _pre_whiten(self, data, info, picks):
         """Aux function."""
-        has_pre_whitener = hasattr(self, '_pre_whitener')
+        has_pre_whitener = hasattr(self, 'pre_whitener_')
         if not has_pre_whitener and self.noise_cov is None:
             # use standardization as whitener
             # Scale (z-score) the data by channel
@@ -502,25 +502,26 @@ class ICA(ICA_ORIG):
             assert data.shape[0] == pre_whitener.shape[1]
             data = np.dot(pre_whitener, data)
         elif has_pre_whitener and self.noise_cov is None:
-            data /= self._pre_whitener
-            pre_whitener = self._pre_whitener
+            data /= self.pre_whitener_
+            pre_whitener = self.pre_whitener_
         else:
-            data = np.dot(self._pre_whitener, data)
-            pre_whitener = self._pre_whitener
+            data = np.dot(self.pre_whitener_, data)
+            pre_whitener = self.pre_whitener_
 
         return data, pre_whitener
 
 
-def read_ica(fname):
-    """
-    Restore ICA solution from fif file. The resulting ICA object is initialized
-    as an instance of jumeg.decompose.ica_replace_mean_std.ICA
+def read_ica(fname, verbose=None):
+    """Restore ICA solution from fif file.
 
     Parameters
     ----------
     fname : str
         Absolute path to fif file containing ICA matrices.
         The file name should end with -ica.fif or -ica.fif.gz.
+    verbose : bool, str, int, or None
+        If not None, override default verbose level (see :func:`mne.verbose`
+        and :ref:`Logging documentation <tut_logging>` for more).
 
     Returns
     -------
@@ -539,7 +540,8 @@ def read_ica(fname):
     from scipy import linalg
     from mne.fixes import _get_args
 
-    check_fname(fname, 'ICA', ('-ica.fif', '-ica.fif.gz'))
+    check_fname(fname, 'ICA', ('-ica.fif', '-ica.fif.gz',
+                               '_ica.fif', '_ica.fif.gz'))
 
     logger.info('Reading %s ...' % fname)
     fid, tree, _ = fiff_open(fname)
@@ -610,7 +612,7 @@ def read_ica(fname):
     ica = ICA(**ica_init)
     ica.current_fit = current_fit
     ica.ch_names = ch_names.split(':')
-    ica._pre_whitener = f(pre_whitener)
+    ica.pre_whitener_ = f(pre_whitener)
     ica.pca_mean_ = f(pca_mean)
     ica.pca_components_ = f(pca_components)
     ica.n_components_ = unmixing_matrix.shape[0]
