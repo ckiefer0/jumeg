@@ -443,7 +443,7 @@ class ICA(ICA_ORIG):
                  method='fastica', fit_params=None, max_iter=200,
                  verbose=None):
 
-        # check if version of mne is at most 0.17.0 or newer
+        # check if version of mne is at most 0.17.0
         if not check_version('mne', '0.17.0'):
             print ""
             print ""
