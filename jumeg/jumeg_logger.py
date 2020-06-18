@@ -150,11 +150,11 @@ class JuMEGLogFormatter(logging.Formatter):
     """
 
     FORMATS = {
-        #logging.info:   "%(levelname)s - (asctime)s — %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n %(message)s",
-        logging.INFO:   "\n%(levelname)s - %(asctime)s — %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s",
-        logging.ERROR:  "\n%(levelname)s - %(asctime)s — %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s",
-        logging.WARNING:"\n%(levelname)s - %(asctime)s — %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s",
-        logging.DEBUG:  "\n%(levelname)s - %(asctime)s — %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s\n"
+        # logging.info:   "%(levelname)s - (asctime)s - %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n %(message)s",
+        logging.INFO: "\n%(levelname)s - %(asctime)s - %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s",
+        logging.ERROR: "\n%(levelname)s - %(asctime)s - %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s",
+        logging.WARNING: "\n%(levelname)s - %(asctime)s - %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s",
+        logging.DEBUG: "\n%(levelname)s - %(asctime)s - %(name)s - %(module)s - %(funcName)s:%(lineno)d :\n%(message)s\n"
     }
 
     def format(self, record):
